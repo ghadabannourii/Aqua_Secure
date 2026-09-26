@@ -1661,6 +1661,49 @@ class PlaceholderData
     }
 
     /**
+     * Vue d'ensemble des zones pour Admin (incidents par zone)
+     */
+    public static function adminZoneOverview(): array
+    {
+        return [
+            ['zone' => 'Tunis Nord',   'emoji' => '🏛️', 'total' => 3,  'in_progress' => 1, 'resolved' => 2, 'status' => 'alert',    'lat' => 36.8568, 'lng' => 10.1853],
+            ['zone' => 'Ariana',       'emoji' => '🏘️', 'total' => 7,  'in_progress' => 2, 'resolved' => 5, 'status' => 'critical', 'lat' => 36.8665, 'lng' => 10.1647],
+            ['zone' => 'La Marsa',     'emoji' => '🏖️', 'total' => 5,  'in_progress' => 2, 'resolved' => 3, 'status' => 'alert',    'lat' => 36.8881, 'lng' => 10.3235],
+            ['zone' => 'Ben Arous',    'emoji' => '🏭', 'total' => 1,  'in_progress' => 0, 'resolved' => 1, 'status' => 'normal',   'lat' => 36.7533, 'lng' => 10.2286],
+            ['zone' => 'Tunis Centre', 'emoji' => '🌆', 'total' => 3,  'in_progress' => 0, 'resolved' => 3, 'status' => 'normal',   'lat' => 36.8190, 'lng' => 10.1657],
+            ['zone' => 'Sousse',       'emoji' => '🌊', 'total' => 1,  'in_progress' => 0, 'resolved' => 1, 'status' => 'normal',   'lat' => 35.8245, 'lng' => 10.6346],
+            ['zone' => 'Sfax Centre',  'emoji' => '🏢', 'total' => 1,  'in_progress' => 1, 'resolved' => 0, 'status' => 'alert',    'lat' => 34.7406, 'lng' => 10.7603],
+        ];
+    }
+
+    /**
+     * Statistiques de performance globales
+     */
+    public static function adminPerformanceStats(): array
+    {
+        return [
+            'total_resolved'      => 107,
+            'avg_resolution_time' => '4h 32m',
+            'resolution_rate'     => 86,
+            'incidents_this_month'=> 24,
+            'resolved_this_month' => 21,
+            'avg_response_time'   => '38 min',
+        ];
+    }
+
+    /**
+     * Historique incidents 7 derniers jours (pour sparkline Admin)
+     */
+    public static function adminIncidents7Days(): array
+    {
+        return [
+            'labels'   => ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
+            'created'  => [8,  12, 6,  15, 9,  4,  3],
+            'resolved' => [6,  10, 8,  12, 11, 3,  2],
+        ];
+    }
+
+    /**
      * Activité plateforme récente (pour Admin Dashboard)
      */
     public static function adminPlatformActivity(): array

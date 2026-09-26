@@ -3,7 +3,7 @@
     <!-- Toasts will be dynamically inserted here -->
 </div>
 
-<?php if (! $__env->hasRenderedOnce('08875446-edfd-43cc-a30a-eeecaa9da957')): $__env->markAsRenderedOnce('08875446-edfd-43cc-a30a-eeecaa9da957'); ?>
+<?php if (! $__env->hasRenderedOnce('d7520cfe-35c9-4bdd-beaa-826ffef96ec7')): $__env->markAsRenderedOnce('d7520cfe-35c9-4bdd-beaa-826ffef96ec7'); ?>
 <?php $__env->startPush('scripts'); ?>
 <script>
 function showToast(message, type = 'info', duration = 5000) {
