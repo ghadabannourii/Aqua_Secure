@@ -1,374 +1,497 @@
-<?php $__env->startSection('title', 'Tableau de bord Gestionnaire'); ?>
+<?php $__env->startSection('title', 'Tableau de bord Gestionnaire — AquaSecure'); ?>
 
 <?php
     use App\Data\PlaceholderData;
-    $zones = PlaceholderData::zones();
-    $stats = PlaceholderData::stats();
-    $user = session('user', ['name' => 'Gestionnaire', 'role' => 'manager']);
+    $user        = session('user', ['name' => 'Ines Mansouri', 'role' => 'manager']);
+    $zones       = PlaceholderData::mapZones();
+    $stats       = PlaceholderData::stats();
+    $technicians = PlaceholderData::adminTechnicians();
+    $reclamations= PlaceholderData::adminAllReclamations();
+    $monthly     = PlaceholderData::analyticsMonthly();
+
+    $firstName   = explode(' ', $user['name'])[0];
+
+    $zoneNormal  = count(array_filter($zones, fn($z)=>$z['status']==='normal'));
+    $zoneAlert   = count(array_filter($zones, fn($z)=>$z['status']==='alert'));
+    $zoneCrit    = count(array_filter($zones, fn($z)=>$z['status']==='critical'));
+
+    $totalInc    = count($reclamations);
+    $inProgressInc = count(array_filter($reclamations, fn($r)=>$r['status']==='in_progress'));
+    $pendingInc  = count(array_filter($reclamations, fn($r)=>$r['status']==='pending'));
+    $resolvedInc = count(array_filter($reclamations, fn($r)=>$r['status']==='resolved'));
+
+    $techOnMission = count(array_filter($technicians, fn($t)=>$t['status']==='on_mission'));
+    $techAvail     = count(array_filter($technicians, fn($t)=>$t['status']==='available'));
+
+    $statusStyle = [
+        'pending'     => ['bg'=>'bg-red-500/15',   'text'=>'text-red-300',   'dot'=>'bg-red-400 animate-pulse','label'=>'Non traité'],
+        'in_progress' => ['bg'=>'bg-amber-500/15', 'text'=>'text-amber-300', 'dot'=>'bg-amber-400',            'label'=>'En cours'],
+        'resolved'    => ['bg'=>'bg-teal-500/15',  'text'=>'text-teal-300',  'dot'=>'bg-teal-400',             'label'=>'Résolu'],
+    ];
+    $priorityStyle = [
+        'critical' => ['bg'=>'bg-red-500/15',  'text'=>'text-red-300',  'label'=>'Critique'],
+        'medium'   => ['bg'=>'bg-amber-500/15','text'=>'text-amber-300','label'=>'Moyenne'],
+        'low'      => ['bg'=>'bg-blue-500/15', 'text'=>'text-blue-300', 'label'=>'Faible'],
+    ];
 ?>
 
+<?php $__env->startPush('styles'); ?>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+<style>
+@keyframes barSlide { from { width: 0 } }
+.bar-grow { animation: barSlide .9s cubic-bezier(.22,1,.36,1) both; }
+#mgr-map { height: 340px; }
+.leaflet-tile-pane { filter: brightness(.68) saturate(.6) hue-rotate(185deg); }
+.leaflet-control-zoom a { background:rgba(6,21,37,.9)!important; border-color:rgba(5,191,219,.25)!important; color:#7ce8f7!important; }
+.leaflet-control-attribution { display:none!important; }
+.leaflet-popup-content-wrapper { background:rgba(6,21,37,.97)!important; border:1px solid rgba(5,191,219,.3)!important; border-radius:12px!important; color:#f0fdff!important; padding:0!important; }
+.leaflet-popup-tip { background:rgba(6,21,37,.97)!important; }
+.leaflet-popup-content { margin:0!important; padding:0!important; min-width:200px; }
+.leaflet-popup-close-button { color:rgba(156,200,216,.6)!important; }
+</style>
+<?php $__env->stopPush(); ?>
+
 <?php $__env->startSection('content'); ?>
-<div class="container mx-auto px-4 py-8">
-    <!-- Header -->
-    <div class="mb-8">
-        <div class="flex items-center justify-between mb-4">
-            <div class="flex items-center gap-3">
-                <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-400/25 flex items-center justify-center">
-                    <i data-lucide="droplet" class="w-7 h-7 text-cyan-300"></i>
-                </div>
-                <div>
-                    <h1 class="text-3xl font-display font-bold text-white">Centre de gestion</h1>
-                    <p class="text-cyan-100/60 text-sm mt-1"><?php echo e(ucfirst($user['role'])); ?> • <?php echo e($user['name']); ?></p>
-                </div>
-            </div>
-            <?php if (isset($component)) { $__componentOriginal31327652ba86dff3ae51860919901558 = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginal31327652ba86dff3ae51860919901558 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.ripple-button','data' => ['size' => 'md','onclick' => 'showToast(\'Export des données en cours...\', \'info\')']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('ripple-button'); ?>
+<div class="min-h-screen">
+
+
+<nav class="sticky top-0 z-50 glass-strong px-4 sm:px-6 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center">
+            <i data-lucide="droplet" class="w-5 h-5 text-white"></i>
+        </div>
+        <span class="font-display font-bold text-white hidden sm:block">AquaSecure</span>
+        <span class="hidden sm:inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/15 text-blue-300 border border-blue-400/20">
+            Espace Gestionnaire
+        </span>
+    </div>
+    <div class="flex items-center gap-2">
+        <button onclick="toggleTheme()"
+                class="glass p-2 rounded-lg text-cyan-300 hover:text-white transition-colors">
+            <i data-lucide="sun"  class="w-4 h-4 sun-icon  hidden"></i>
+            <i data-lucide="moon" class="w-4 h-4 moon-icon"></i>
+        </button>
+        <?php if (isset($component)) { $__componentOriginal7169a5b356633be5dafc74bf7a8eb300 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal7169a5b356633be5dafc74bf7a8eb300 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.notification-center','data' => []] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('notification-center'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['size' => 'md','onclick' => 'showToast(\'Export des données en cours...\', \'info\')']); ?>
-                <i data-lucide="download" class="w-4 h-4"></i>
-                Exporter
-             <?php echo $__env->renderComponent(); ?>
+<?php $component->withAttributes([]); ?>
+<?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
-<?php if (isset($__attributesOriginal31327652ba86dff3ae51860919901558)): ?>
-<?php $attributes = $__attributesOriginal31327652ba86dff3ae51860919901558; ?>
-<?php unset($__attributesOriginal31327652ba86dff3ae51860919901558); ?>
+<?php if (isset($__attributesOriginal7169a5b356633be5dafc74bf7a8eb300)): ?>
+<?php $attributes = $__attributesOriginal7169a5b356633be5dafc74bf7a8eb300; ?>
+<?php unset($__attributesOriginal7169a5b356633be5dafc74bf7a8eb300); ?>
 <?php endif; ?>
-<?php if (isset($__componentOriginal31327652ba86dff3ae51860919901558)): ?>
-<?php $component = $__componentOriginal31327652ba86dff3ae51860919901558; ?>
-<?php unset($__componentOriginal31327652ba86dff3ae51860919901558); ?>
+<?php if (isset($__componentOriginal7169a5b356633be5dafc74bf7a8eb300)): ?>
+<?php $component = $__componentOriginal7169a5b356633be5dafc74bf7a8eb300; ?>
+<?php unset($__componentOriginal7169a5b356633be5dafc74bf7a8eb300); ?>
 <?php endif; ?>
+        <?php if (isset($component)) { $__componentOriginal42edc48abdcb6c65aa0760095ea712dd = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal42edc48abdcb6c65aa0760095ea712dd = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.user-menu','data' => []] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('user-menu'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes([]); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal42edc48abdcb6c65aa0760095ea712dd)): ?>
+<?php $attributes = $__attributesOriginal42edc48abdcb6c65aa0760095ea712dd; ?>
+<?php unset($__attributesOriginal42edc48abdcb6c65aa0760095ea712dd); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal42edc48abdcb6c65aa0760095ea712dd)): ?>
+<?php $component = $__componentOriginal42edc48abdcb6c65aa0760095ea712dd; ?>
+<?php unset($__componentOriginal42edc48abdcb6c65aa0760095ea712dd); ?>
+<?php endif; ?>
+    </div>
+</nav>
+
+<div class="container mx-auto px-4 py-6 max-w-7xl space-y-6 animate-fade-in-up">
+
+    
+    <div class="flex flex-wrap items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl sm:text-3xl font-display font-bold text-white">
+                Bonjour, <?php echo e($firstName); ?> 👋
+            </h1>
+            <p class="text-cyan-100/55 text-sm mt-0.5">
+                Gestionnaire · Supervision opérationnelle du réseau
+            </p>
         </div>
-        <p class="text-cyan-100/70 max-w-3xl">
-            Vue d'ensemble du réseau national, gestion des interventions et supervision des équipes terrain.
-        </p>
+        <div class="flex gap-2">
+            <a href="<?php echo e(route('manager.analytics')); ?>"
+               class="glass px-4 py-2 rounded-xl text-sm text-cyan-300 hover:text-white font-semibold
+                      flex items-center gap-2 transition-all hover:border-cyan-400/40">
+                <i data-lucide="bar-chart-2" class="w-4 h-4"></i>
+                <span class="hidden sm:inline">Analytics</span>
+            </a>
+            <a href="<?php echo e(route('manager.map')); ?>"
+               class="glass px-4 py-2 rounded-xl text-sm text-cyan-300 hover:text-white font-semibold
+                      flex items-center gap-2 transition-all hover:border-cyan-400/40">
+                <i data-lucide="map" class="w-4 h-4"></i>
+                <span class="hidden sm:inline">Carte complète</span>
+            </a>
+        </div>
     </div>
 
-    <!-- Key Metrics -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <?php $__currentLoopData = [
-            ['icon' => 'droplet', 'value' => $stats['totalZones'], 'label' => 'Zones surveillées', 'trend' => '+2', 'color' => 'cyan'],
-            ['icon' => 'alert-circle', 'value' => $stats['activeIncidents'], 'label' => 'Incidents actifs', 'trend' => '-5', 'color' => 'orange'],
-            ['icon' => 'users', 'value' => '47', 'label' => 'Techniciens actifs', 'trend' => '+3', 'color' => 'teal'],
-            ['icon' => 'activity', 'value' => '94%', 'label' => 'Taux disponibilité', 'trend' => '+1%', 'color' => 'blue'],
-        ]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $metric): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-        <div class="glass p-5 rounded-2xl hover-lift">
-            <div class="flex items-start justify-between mb-3">
-                <div class="w-12 h-12 rounded-xl bg-<?php echo e($metric['color']); ?>-500/10 flex items-center justify-center">
-                    <i data-lucide="<?php echo e($metric['icon']); ?>" class="w-6 h-6 text-<?php echo e($metric['color']); ?>-400"></i>
-                </div>
-                <span class="text-xs font-semibold <?php echo e(strpos($metric['trend'], '+') === 0 ? 'text-teal-400' : 'text-red-400'); ?>">
-                    <?php echo e($metric['trend']); ?>
-
-                </span>
+            ['val'=>count($zones),  'label'=>'Zones surveillées','icon'=>'map-pin',      'bg'=>'bg-cyan-500/10',  'ic'=>'text-cyan-400',  'sub'=>$zoneNormal.' normales'],
+            ['val'=>$totalInc,      'label'=>'Incidents',        'icon'=>'alert-triangle','bg'=>'bg-red-500/10',   'ic'=>'text-red-400',   'sub'=>$pendingInc.' non traités'],
+            ['val'=>$inProgressInc, 'label'=>'Interventions',    'icon'=>'loader',        'bg'=>'bg-amber-500/10', 'ic'=>'text-amber-400', 'sub'=>'en cours'],
+            ['val'=>$techOnMission, 'label'=>'Techniciens',      'icon'=>'wrench',        'bg'=>'bg-teal-500/10',  'ic'=>'text-teal-400',  'sub'=>$techAvail.' disponibles'],
+        ]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $kpi): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+        <div class="glass rounded-2xl p-4 hover-lift">
+            <div class="w-10 h-10 rounded-xl <?php echo e($kpi['bg']); ?> flex items-center justify-center mb-3">
+                <i data-lucide="<?php echo e($kpi['icon']); ?>" class="w-5 h-5 <?php echo e($kpi['ic']); ?>"></i>
             </div>
-            <div class="text-2xl font-display font-bold text-white mb-1"><?php echo e($metric['value']); ?></div>
-            <div class="text-xs text-cyan-100/60"><?php echo e($metric['label']); ?></div>
+            <p class="text-2xl font-display font-bold text-white"><?php echo e($kpi['val']); ?></p>
+            <p class="text-xs font-semibold text-cyan-100/60 mt-0.5"><?php echo e($kpi['label']); ?></p>
+            <p class="text-[10px] text-cyan-100/35"><?php echo e($kpi['sub']); ?></p>
         </div>
         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
     </div>
 
-    <!-- Main Content Tabs -->
-    <div class="glass-strong rounded-2xl overflow-hidden">
-        <!-- Tab Navigation -->
-        <div class="border-b border-white/5">
-            <nav class="flex overflow-x-auto">
+    
+    <div class="glass rounded-2xl overflow-hidden">
+        <div class="px-5 py-4 border-b border-white/5 flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h2 class="text-white font-display font-bold">État du réseau en temps réel</h2>
+                <p class="text-cyan-100/50 text-xs mt-0.5"><?php echo e(count($zones)); ?> zones · Incidents actifs</p>
+            </div>
+            <div class="flex items-center gap-2 flex-wrap">
                 <?php $__currentLoopData = [
-                    ['id' => 'overview', 'icon' => 'layout-grid', 'label' => 'Vue d\'ensemble'],
-                    ['id' => 'map', 'icon' => 'map', 'label' => 'Carte réseau'],
-                    ['id' => 'reports', 'icon' => 'file-text', 'label' => 'Rapports'],
-                    ['id' => 'projects', 'icon' => 'briefcase', 'label' => 'Projets'],
-                    ['id' => 'stats', 'icon' => 'bar-chart', 'label' => 'Statistiques'],
-                ]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $tab): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                <button 
-                    onclick="switchTab('<?php echo e($tab['id']); ?>')" 
-                    class="tab-btn flex items-center gap-2 px-6 py-4 text-sm font-semibold border-b-2 transition-all whitespace-nowrap <?php echo e($index === 0 ? 'border-cyan-400 text-white' : 'border-transparent text-cyan-100/50 hover:text-cyan-100/80'); ?>"
-                    data-tab="<?php echo e($tab['id']); ?>"
-                >
-                    <i data-lucide="<?php echo e($tab['icon']); ?>" class="w-4 h-4"></i>
-                    <span><?php echo e($tab['label']); ?></span>
-                </button>
+                    ['c'=>'bg-teal-400',             't'=>'text-teal-300',  'l'=>'Normal',   'n'=>$zoneNormal],
+                    ['c'=>'bg-amber-400',             't'=>'text-amber-300','l'=>'Alerte',   'n'=>$zoneAlert],
+                    ['c'=>'bg-red-400 animate-pulse', 't'=>'text-red-300',  'l'=>'Critique', 'n'=>$zoneCrit],
+                ]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $leg): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
+                    <span class="w-2 h-2 rounded-full <?php echo e($leg['c']); ?>"></span>
+                    <span class="text-xs font-semibold <?php echo e($leg['t']); ?>"><?php echo e($leg['n']); ?> <?php echo e($leg['l']); ?></span>
+                </div>
                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-            </nav>
+                <a href="<?php echo e(route('manager.map')); ?>"
+                   class="glass px-3 py-1.5 rounded-lg text-xs text-cyan-300 hover:text-white font-semibold
+                          flex items-center gap-1 transition-all hover:border-cyan-400/40">
+                    <i data-lucide="maximize-2" class="w-3.5 h-3.5"></i>
+                    <span class="hidden sm:inline">Plein écran</span>
+                </a>
+            </div>
+        </div>
+        <div id="mgr-map"></div>
+    </div>
+
+    
+    <div class="grid lg:grid-cols-5 gap-6">
+
+        
+        <div class="glass rounded-2xl overflow-hidden lg:col-span-3">
+            <div class="px-5 py-4 border-b border-white/5 flex items-center justify-between">
+                <div>
+                    <h2 class="text-white font-display font-bold">Incidents récents</h2>
+                    <p class="text-cyan-100/50 text-xs mt-0.5">
+                        <span class="text-red-300"><?php echo e($pendingInc); ?></span> non traités ·
+                        <span class="text-amber-300"><?php echo e($inProgressInc); ?></span> en cours
+                    </p>
+                </div>
+                <a href="<?php echo e(route('manager.incidents')); ?>"
+                   class="text-xs text-cyan-400 hover:text-cyan-300 font-semibold transition-colors">
+                    Gérer →
+                </a>
+            </div>
+            <div class="divide-y divide-white/[.04]">
+                <?php $__currentLoopData = $reclamations; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $rec): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <?php
+                    $ss = $statusStyle[$rec['status']];
+                    $ps = $priorityStyle[$rec['priority']];
+                ?>
+                <div class="flex items-center gap-3 px-5 py-3.5 hover:bg-white/[.025] transition-colors">
+                    <div class="w-2 h-2 rounded-full <?php echo e($ss['dot']); ?> shrink-0"></div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-1.5 mb-0.5 flex-wrap">
+                            <span class="text-[10px] font-mono font-bold text-cyan-400"><?php echo e($rec['id']); ?></span>
+                            <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold <?php echo e($ps['bg']); ?> <?php echo e($ps['text']); ?>">
+                                <?php echo e($ps['label']); ?>
+
+                            </span>
+                            <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold <?php echo e($ss['bg']); ?> <?php echo e($ss['text']); ?>">
+                                <?php echo e($ss['label']); ?>
+
+                            </span>
+                        </div>
+                        <p class="text-white text-xs font-semibold truncate"><?php echo e($rec['type']); ?></p>
+                        <p class="text-cyan-100/45 text-[11px]"><?php echo e($rec['zone']); ?> · <?php echo e($rec['citizen']); ?></p>
+                    </div>
+                    <div class="flex items-center gap-1.5 shrink-0">
+                        <?php if($rec['status']==='pending'): ?>
+                        <button onclick="showToast('Assignation technicien à implémenter', 'info')"
+                                class="glass px-2.5 py-1.5 rounded-lg text-[11px] text-teal-300 hover:text-white font-semibold transition-colors"
+                                title="Affecter">
+                            Affecter
+                        </button>
+                        <?php endif; ?>
+                        <span class="text-[10px] text-cyan-100/30 whitespace-nowrap"><?php echo e($rec['created_at']); ?></span>
+                    </div>
+                </div>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+            </div>
+            <div class="px-5 py-3 border-t border-white/5">
+                <a href="<?php echo e(route('manager.incidents')); ?>"
+                   class="text-xs text-cyan-400 hover:text-cyan-300 font-semibold transition-colors">
+                    Voir tous les incidents →
+                </a>
+            </div>
         </div>
 
-        <!-- Tab Content -->
-        <div class="p-6">
-            <!-- Overview Tab -->
-            <div id="tab-overview" class="tab-content">
-                <div class="grid lg:grid-cols-2 gap-6">
-                    <!-- Recent Incidents -->
-                    <div>
-                        <h3 class="text-lg font-display font-bold text-white mb-4 flex items-center gap-2">
-                            <i data-lucide="alert-triangle" class="w-5 h-5 text-orange-400"></i>
-                            Incidents récents
-                        </h3>
-                        <div class="space-y-3">
-                            <?php $__currentLoopData = [
-                                ['id' => '#INC-2026-089', 'type' => 'Fuite majeure', 'zone' => 'Tunis Nord', 'priority' => 'Élevée', 'time' => '15 min', 'priorityColor' => 'red'],
-                                ['id' => '#INC-2026-088', 'type' => 'Qualité dégradée', 'zone' => 'Sfax Centre', 'priority' => 'Moyenne', 'time' => '1h 20min', 'priorityColor' => 'orange'],
-                                ['id' => '#INC-2026-087', 'type' => 'Pression basse', 'zone' => 'Sousse Nord', 'priority' => 'Faible', 'time' => '2h', 'priorityColor' => 'cyan'],
-                            ]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $incident): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                            <div class="glass p-4 rounded-xl hover-lift">
-                                <div class="flex items-start justify-between mb-2">
-                                    <div class="flex-1">
-                                        <div class="flex items-center gap-2 mb-1">
-                                            <span class="text-sm font-mono font-semibold text-cyan-300"><?php echo e($incident['id']); ?></span>
-                                            <?php if (isset($component)) { $__componentOriginal2ddbc40e602c342e508ac696e52f8719 = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginal2ddbc40e602c342e508ac696e52f8719 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.badge','data' => ['color' => '#'.e($incident['priorityColor'] === 'red' ? 'ef4444' : ($incident['priorityColor'] === 'orange' ? 'f97316' : '06b6d4')).'']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('badge'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes(['color' => '#'.e($incident['priorityColor'] === 'red' ? 'ef4444' : ($incident['priorityColor'] === 'orange' ? 'f97316' : '06b6d4')).'']); ?>
-                                                <?php echo e($incident['priority']); ?>
+        
+        <div class="glass rounded-2xl overflow-hidden lg:col-span-2">
+            <div class="px-5 py-4 border-b border-white/5 flex items-center justify-between">
+                <div>
+                    <h2 class="text-white font-display font-bold">Équipes terrain</h2>
+                    <p class="text-cyan-100/50 text-xs mt-0.5"><?php echo e($techOnMission); ?> en mission · <?php echo e($techAvail); ?> disponibles</p>
+                </div>
+                <a href="<?php echo e(route('manager.teams')); ?>"
+                   class="text-xs text-cyan-400 hover:text-cyan-300 font-semibold transition-colors">
+                    Gérer →
+                </a>
+            </div>
+            <div class="divide-y divide-white/[.04]">
+                <?php $__currentLoopData = $technicians; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $tech): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <?php
+                    $ts = [
+                        'on_mission' => ['dot'=>'bg-amber-400 animate-pulse','text'=>'text-amber-300','label'=>'En mission'],
+                        'available'  => ['dot'=>'bg-teal-400',               'text'=>'text-teal-300', 'label'=>'Disponible'],
+                        'off_duty'   => ['dot'=>'bg-slate-500',              'text'=>'text-slate-400','label'=>'Hors service'],
+                    ][$tech['status']];
+                ?>
+                <div class="flex items-center gap-3 px-5 py-3 hover:bg-white/[.02] transition-colors">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-600/20
+                                 border border-cyan-400/15 flex items-center justify-center
+                                 text-[11px] font-bold text-cyan-300 shrink-0">
+                        <?php echo e($tech['initials']); ?>
 
-                                             <?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginal2ddbc40e602c342e508ac696e52f8719)): ?>
-<?php $attributes = $__attributesOriginal2ddbc40e602c342e508ac696e52f8719; ?>
-<?php unset($__attributesOriginal2ddbc40e602c342e508ac696e52f8719); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginal2ddbc40e602c342e508ac696e52f8719)): ?>
-<?php $component = $__componentOriginal2ddbc40e602c342e508ac696e52f8719; ?>
-<?php unset($__componentOriginal2ddbc40e602c342e508ac696e52f8719); ?>
-<?php endif; ?>
-                                        </div>
-                                        <h4 class="text-white font-semibold text-sm"><?php echo e($incident['type']); ?></h4>
-                                        <p class="text-cyan-100/60 text-xs mt-1"><?php echo e($incident['zone']); ?> • Il y a <?php echo e($incident['time']); ?></p>
-                                    </div>
-                                    <button class="text-cyan-300 hover:text-cyan-200 transition-colors">
-                                        <i data-lucide="arrow-right" class="w-4 h-4"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                        </div>
                     </div>
-
-                    <!-- Active Teams -->
-                    <div>
-                        <h3 class="text-lg font-display font-bold text-white mb-4 flex items-center gap-2">
-                            <i data-lucide="users" class="w-5 h-5 text-teal-400"></i>
-                            Équipes sur le terrain
-                        </h3>
-                        <div class="space-y-3">
-                            <?php $__currentLoopData = [
-                                ['name' => 'Équipe Alpha', 'tech' => 'Amira Ben Ali', 'zone' => 'Tunis Nord', 'status' => 'En intervention', 'statusColor' => 'orange'],
-                                ['name' => 'Équipe Beta', 'tech' => 'Mohamed Touati', 'zone' => 'Ariana', 'status' => 'En route', 'statusColor' => 'cyan'],
-                                ['name' => 'Équipe Gamma', 'tech' => 'Salma Khelifi', 'zone' => 'Sfax Centre', 'status' => 'Disponible', 'statusColor' => 'teal'],
-                            ]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $team): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                            <div class="glass p-4 rounded-xl hover-lift">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-600/20 flex items-center justify-center">
-                                            <i data-lucide="hard-hat" class="w-5 h-5 text-cyan-300"></i>
-                                        </div>
-                                        <div>
-                                            <h4 class="text-white font-semibold text-sm"><?php echo e($team['name']); ?></h4>
-                                            <p class="text-cyan-100/60 text-xs"><?php echo e($team['tech']); ?> • <?php echo e($team['zone']); ?></p>
-                                        </div>
-                                    </div>
-                                    <?php if (isset($component)) { $__componentOriginal2ddbc40e602c342e508ac696e52f8719 = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginal2ddbc40e602c342e508ac696e52f8719 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.badge','data' => ['color' => '#'.e($team['statusColor'] === 'orange' ? 'f97316' : ($team['statusColor'] === 'cyan' ? '06b6d4' : '14b8a6')).'']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('badge'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes(['color' => '#'.e($team['statusColor'] === 'orange' ? 'f97316' : ($team['statusColor'] === 'cyan' ? '06b6d4' : '14b8a6')).'']); ?>
-                                        <?php echo e($team['status']); ?>
-
-                                     <?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginal2ddbc40e602c342e508ac696e52f8719)): ?>
-<?php $attributes = $__attributesOriginal2ddbc40e602c342e508ac696e52f8719; ?>
-<?php unset($__attributesOriginal2ddbc40e602c342e508ac696e52f8719); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginal2ddbc40e602c342e508ac696e52f8719)): ?>
-<?php $component = $__componentOriginal2ddbc40e602c342e508ac696e52f8719; ?>
-<?php unset($__componentOriginal2ddbc40e602c342e508ac696e52f8719); ?>
-<?php endif; ?>
-                                </div>
-                            </div>
-                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                        </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-white text-xs font-semibold truncate"><?php echo e($tech['name']); ?></p>
+                        <p class="text-cyan-100/40 text-[11px] truncate"><?php echo e($tech['zone']); ?></p>
+                    </div>
+                    <div class="flex items-center gap-1.5 shrink-0">
+                        <?php if($tech['interventions'] > 0): ?>
+                        <span class="w-5 h-5 rounded-full bg-amber-500/15 text-amber-300 text-[10px] font-bold
+                                      flex items-center justify-center"><?php echo e($tech['interventions']); ?></span>
+                        <?php endif; ?>
+                        <span class="w-2 h-2 rounded-full <?php echo e($ts['dot']); ?>"></span>
                     </div>
                 </div>
-
-                <!-- Zone Status Grid -->
-                <div class="mt-8">
-                    <h3 class="text-lg font-display font-bold text-white mb-4 flex items-center gap-2">
-                        <i data-lucide="grid" class="w-5 h-5 text-cyan-400"></i>
-                        État des zones
-                    </h3>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                        <?php $__currentLoopData = $zones; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $zone): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                        <div class="glass p-4 rounded-xl hover-lift cursor-pointer" style="border-color: <?php echo e($zone['color']); ?>40">
-                            <div class="flex items-center justify-between mb-2">
-                                <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background-color: <?php echo e($zone['color']); ?>20">
-                                    <i data-lucide="droplet" class="w-4 h-4" style="color: <?php echo e($zone['color']); ?>"></i>
-                                </div>
-                                <span class="text-xl"><?php echo e($zone['emoji']); ?></span>
-                            </div>
-                            <h4 class="text-white font-semibold text-sm mb-1"><?php echo e($zone['name']); ?></h4>
-                            <div class="flex items-center gap-2">
-                                <div class="flex-1 h-1.5 bg-slate-950/50 rounded-full overflow-hidden">
-                                    <div class="h-full rounded-full" style="width: <?php echo e($zone['quality']); ?>%; background-color: <?php echo e($zone['color']); ?>"></div>
-                                </div>
-                                <span class="text-xs font-semibold" style="color: <?php echo e($zone['color']); ?>"><?php echo e($zone['quality']); ?>%</span>
-                            </div>
-                        </div>
-                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Map Tab -->
-            <div id="tab-map" class="tab-content hidden">
-                <h3 class="text-xl font-display font-bold text-white mb-4">Carte interactive du réseau</h3>
-                <div class="glass p-8 rounded-xl text-center">
-                    <i data-lucide="map-pin" class="w-16 h-16 text-cyan-400 mx-auto mb-4"></i>
-                    <p class="text-cyan-100/60">Carte interactive du réseau national (à venir)</p>
-                    <p class="text-cyan-100/40 text-sm mt-2">Cette fonctionnalité sera disponible avec l'intégration backend</p>
-                </div>
-            </div>
-
-            <!-- Reports Tab -->
-            <div id="tab-reports" class="tab-content hidden">
-                <h3 class="text-xl font-display font-bold text-white mb-4">Rapports et analyses</h3>
-                <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <?php $__currentLoopData = [
-                        ['icon' => 'file-bar-chart', 'title' => 'Rapport mensuel', 'desc' => 'Septembre 2026', 'color' => 'cyan'],
-                        ['icon' => 'trending-up', 'title' => 'Analyse tendances', 'desc' => 'Derniers 90 jours', 'color' => 'teal'],
-                        ['icon' => 'clock', 'title' => 'Temps intervention', 'desc' => 'Performance équipes', 'color' => 'blue'],
-                        ['icon' => 'droplet', 'title' => 'Qualité de l\'eau', 'desc' => 'Tests laboratoire', 'color' => 'cyan'],
-                        ['icon' => 'alert-circle', 'title' => 'Incidents', 'desc' => 'Analyse par type', 'color' => 'orange'],
-                        ['icon' => 'users', 'title' => 'Satisfaction', 'desc' => 'Enquêtes citoyens', 'color' => 'teal'],
-                    ]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $report): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                    <button class="glass p-5 rounded-xl hover-lift text-left transition-all hover:border-<?php echo e($report['color']); ?>-400/40">
-                        <div class="w-12 h-12 rounded-xl bg-<?php echo e($report['color']); ?>-500/10 flex items-center justify-center mb-3">
-                            <i data-lucide="<?php echo e($report['icon']); ?>" class="w-6 h-6 text-<?php echo e($report['color']); ?>-400"></i>
-                        </div>
-                        <h4 class="text-white font-semibold mb-1"><?php echo e($report['title']); ?></h4>
-                        <p class="text-cyan-100/60 text-sm"><?php echo e($report['desc']); ?></p>
-                    </button>
-                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                </div>
-            </div>
-
-            <!-- Projects Tab -->
-            <div id="tab-projects" class="tab-content hidden">
-                <h3 class="text-xl font-display font-bold text-white mb-4">Projets en cours</h3>
-                <div class="space-y-4">
-                    <?php $__currentLoopData = [
-                        ['name' => 'Extension réseau Tunis Nord', 'progress' => 67, 'deadline' => '15 nov 2026', 'team' => '8 personnes', 'status' => 'En cours'],
-                        ['name' => 'Modernisation capteurs Sfax', 'progress' => 34, 'deadline' => '30 déc 2026', 'team' => '5 personnes', 'status' => 'En cours'],
-                        ['name' => 'Audit qualité Sousse', 'progress' => 89, 'deadline' => '05 oct 2026', 'team' => '3 personnes', 'status' => 'Finalisation'],
-                    ]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $project): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                    <div class="glass p-5 rounded-xl hover-lift">
-                        <div class="flex items-start justify-between mb-4">
-                            <div class="flex-1">
-                                <h4 class="text-white font-semibold mb-2"><?php echo e($project['name']); ?></h4>
-                                <div class="flex items-center gap-4 text-xs text-cyan-100/60">
-                                    <span class="flex items-center gap-1">
-                                        <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
-                                        <?php echo e($project['deadline']); ?>
-
-                                    </span>
-                                    <span class="flex items-center gap-1">
-                                        <i data-lucide="users" class="w-3.5 h-3.5"></i>
-                                        <?php echo e($project['team']); ?>
-
-                                    </span>
-                                </div>
-                            </div>
-                            <?php if (isset($component)) { $__componentOriginal2ddbc40e602c342e508ac696e52f8719 = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginal2ddbc40e602c342e508ac696e52f8719 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.badge','data' => ['color' => '#06b6d4']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('badge'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes(['color' => '#06b6d4']); ?><?php echo e($project['status']); ?> <?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginal2ddbc40e602c342e508ac696e52f8719)): ?>
-<?php $attributes = $__attributesOriginal2ddbc40e602c342e508ac696e52f8719; ?>
-<?php unset($__attributesOriginal2ddbc40e602c342e508ac696e52f8719); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginal2ddbc40e602c342e508ac696e52f8719)): ?>
-<?php $component = $__componentOriginal2ddbc40e602c342e508ac696e52f8719; ?>
-<?php unset($__componentOriginal2ddbc40e602c342e508ac696e52f8719); ?>
-<?php endif; ?>
-                        </div>
-                        <div class="space-y-2">
-                            <div class="flex items-center justify-between text-sm">
-                                <span class="text-cyan-100/70">Progression</span>
-                                <span class="text-white font-semibold"><?php echo e($project['progress']); ?>%</span>
-                            </div>
-                            <div class="h-2 bg-slate-950/50 rounded-full overflow-hidden">
-                                <div class="h-full bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full transition-all" style="width: <?php echo e($project['progress']); ?>%"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                </div>
-            </div>
-
-            <!-- Stats Tab -->
-            <div id="tab-stats" class="tab-content hidden">
-                <h3 class="text-xl font-display font-bold text-white mb-4">Statistiques détaillées</h3>
-                <div class="glass p-8 rounded-xl text-center">
-                    <i data-lucide="bar-chart-2" class="w-16 h-16 text-cyan-400 mx-auto mb-4"></i>
-                    <p class="text-cyan-100/60">Graphiques et statistiques avancées</p>
-                    <p class="text-cyan-100/40 text-sm mt-2">Les composants Chart.js seront intégrés dans la prochaine phase</p>
-                </div>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </div>
         </div>
     </div>
-</div>
 
-<?php $__env->startPush('scripts'); ?>
-<script>
-    function switchTab(tabId) {
-        // Hide all tabs
-        document.querySelectorAll('.tab-content').forEach(tab => {
-            tab.classList.add('hidden');
-        });
+    
+    <div class="grid sm:grid-cols-3 gap-4">
+
         
-        // Remove active state from all buttons
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.classList.remove('border-cyan-400', 'text-white');
-            btn.classList.add('border-transparent', 'text-cyan-100/50');
-        });
+        <div class="glass rounded-2xl p-5 sm:col-span-2">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="text-white font-display font-bold text-sm">Incidents / résolutions</h3>
+                    <p class="text-cyan-100/45 text-xs mt-0.5">12 derniers mois</p>
+                </div>
+                <div class="flex items-center gap-3 text-xs text-cyan-100/50">
+                    <span class="flex items-center gap-1">
+                        <span class="w-3 h-1 rounded bg-red-400/70 inline-block"></span>Incidents
+                    </span>
+                    <span class="flex items-center gap-1">
+                        <span class="w-3 h-1 rounded bg-teal-400/70 inline-block"></span>Résolus
+                    </span>
+                </div>
+            </div>
+            <div style="height:100px">
+                <svg id="mgr-sparkline" width="100%" height="100" viewBox="0 0 600 100"
+                     preserveAspectRatio="none" class="overflow-visible"></svg>
+            </div>
+            <div class="flex justify-between mt-1">
+                <?php $__currentLoopData = $monthly['labels']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $lbl): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <span class="text-[9px] text-cyan-100/30"><?php echo e($lbl); ?></span>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+            </div>
+        </div>
+
         
-        // Show selected tab
-        document.getElementById('tab-' + tabId).classList.remove('hidden');
-        
-        // Add active state to clicked button
-        const activeBtn = document.querySelector('[data-tab="' + tabId + '"]');
-        activeBtn.classList.add('border-cyan-400', 'text-white');
-        activeBtn.classList.remove('border-transparent', 'text-cyan-100/50');
-        
-        // Reinitialize Lucide icons for newly shown content
-        if (typeof lucide !== 'undefined') {
-            lucide.createIcons();
-        }
-    }
-</script>
-<?php $__env->stopPush(); ?>
+        <div class="glass rounded-2xl p-5">
+            <h3 class="text-white font-display font-bold text-sm mb-1">Taux de résolution</h3>
+            <p class="text-cyan-100/45 text-xs mb-4">Incidents résolus / total</p>
+
+            <?php $resRate = $totalInc > 0 ? round($resolvedInc/$totalInc*100) : 0; ?>
+
+            <div class="flex flex-col items-center">
+                <svg width="110" height="110" viewBox="0 0 110 110">
+                    <?php
+                        $r = 42; $circ = 2*M_PI*$r;
+                        $dash = ($resRate/100)*$circ;
+                    ?>
+                    <circle cx="55" cy="55" r="<?php echo e($r); ?>" fill="none" stroke="rgba(5,191,219,.12)" stroke-width="10"/>
+                    <circle cx="55" cy="55" r="<?php echo e($r); ?>" fill="none" stroke="#2dd4bf" stroke-width="10"
+                            stroke-dasharray="<?php echo e($dash); ?> <?php echo e($circ - $dash); ?>"
+                            stroke-dashoffset="<?php echo e($circ * 0.25); ?>"
+                            transform="rotate(-90 55 55)"/>
+                    <text x="55" y="51" text-anchor="middle" font-size="20" font-weight="700"
+                          fill="#f0fdff" font-family="Space Grotesk"><?php echo e($resRate); ?>%</text>
+                    <text x="55" y="64" text-anchor="middle" font-size="9"
+                          fill="rgba(156,200,216,.5)" font-family="Plus Jakarta Sans">résolution</text>
+                </svg>
+            </div>
+
+            <div class="mt-3 space-y-2">
+                <?php $__currentLoopData = [
+                    ['label'=>'Non traités','val'=>$pendingInc,  'color'=>'#ef4444'],
+                    ['label'=>'En cours',   'val'=>$inProgressInc,'color'=>'#f97316'],
+                    ['label'=>'Résolus',    'val'=>$resolvedInc, 'color'=>'#2dd4bf'],
+                ]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $row): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <div class="flex items-center justify-between text-xs">
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full" style="background:<?php echo e($row['color']); ?>"></span>
+                        <span class="text-cyan-100/60"><?php echo e($row['label']); ?></span>
+                    </div>
+                    <span class="font-bold text-white"><?php echo e($row['val']); ?></span>
+                </div>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <?php $__currentLoopData = [
+            ['route'=>'manager.incidents', 'icon'=>'alert-triangle','label'=>'Incidents',   'color'=>'red'],
+            ['route'=>'manager.teams',     'icon'=>'users',          'label'=>'Équipes',     'color'=>'cyan'],
+            ['route'=>'manager.projects',  'icon'=>'briefcase',      'label'=>'Projets',     'color'=>'blue'],
+            ['route'=>'manager.analytics', 'icon'=>'bar-chart-2',    'label'=>'Analytics',   'color'=>'teal'],
+        ]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $link): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+        <a href="<?php echo e(route($link['route'])); ?>"
+           class="glass rounded-2xl p-4 flex items-center gap-3 hover-lift group transition-all hover:border-<?php echo e($link['color']); ?>-400/30">
+            <div class="w-9 h-9 rounded-xl bg-<?php echo e($link['color']); ?>-500/10 flex items-center justify-center shrink-0">
+                <i data-lucide="<?php echo e($link['icon']); ?>" class="w-4.5 h-4.5 text-<?php echo e($link['color']); ?>-400" style="width:18px;height:18px"></i>
+            </div>
+            <span class="text-sm font-semibold text-cyan-100/70 group-hover:text-white transition-colors"><?php echo e($link['label']); ?></span>
+            <i data-lucide="arrow-right" class="w-4 h-4 text-cyan-100/20 group-hover:text-cyan-400 ml-auto transition-colors shrink-0"></i>
+        </a>
+        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+    </div>
+
+</div>
+</div>
 <?php $__env->stopSection(); ?>
 
-<?php echo $__env->make('layouts.manager', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\ghada\Desktop\5ème\projet_Laravel\aquasecure\resources\views/manager/dashboard.blade.php ENDPATH**/ ?>
+<?php $__env->startPush('scripts'); ?>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV/XN/WLI=" crossorigin=""></script>
+<script>
+const MAP_ZONES    = <?php echo json_encode($zones, 15, 512) ?>;
+const RECLAMATIONS = <?php echo json_encode($reclamations, 15, 512) ?>;
+
+/* ── Carte ──────────────────────────────────────────── */
+(function() {
+    const map = L.map('mgr-map', {
+        center: [34.0, 9.4], zoom: 6,
+        zoomControl: false, attributionControl: false, scrollWheelZoom: false
+    });
+    L.control.zoom({ position: 'topright' }).addTo(map);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
+
+    const zoneC = { normal:'#2dd4bf', alert:'#fbbf24', critical:'#ef4444' };
+    MAP_ZONES.forEach(z => {
+        const c = zoneC[z.status] ?? '#2dd4bf';
+        const size = 26, half = 13;
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+            <circle cx="${half}" cy="${half}" r="${half-2}" fill="${c}" fill-opacity="0.15" stroke="${c}" stroke-width="1.5" stroke-dasharray="3,2"/>
+        </svg>`;
+        L.marker([z.lat, z.lng], {
+            icon: L.divIcon({ html: svg, iconSize:[size,size], iconAnchor:[half,half], className:'' }),
+            zIndexOffset: -100
+        }).addTo(map).bindTooltip(
+            `<b style="color:#f0fdff;font-size:11px">${z.emoji} ${z.name}</b><br>
+             <span style="color:${c};font-size:10px">${z.incidents} incident(s)</span>`,
+            { sticky: true, className: '' }
+        );
+    });
+
+    const recC = { pending:'#ef4444', in_progress:'#f97316', resolved:'#2dd4bf' };
+    const recI = { pending:'⚠', in_progress:'🔧', resolved:'✓' };
+    RECLAMATIONS.forEach(r => {
+        const c = recC[r.status] ?? '#9ca3af';
+        const pulse = r.status !== 'resolved';
+        const size = r.status === 'pending' ? 36 : 30, half = size/2;
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+            ${pulse ? `<circle cx="${half}" cy="${half}" r="${half}" fill="${c}" opacity="0.18">
+                <animate attributeName="r" from="${half}" to="${size}" dur="2s" repeatCount="indefinite"/>
+                <animate attributeName="opacity" from="0.25" to="0" dur="2s" repeatCount="indefinite"/>
+            </circle>` : ''}
+            <circle cx="${half}" cy="${half}" r="${half-3}" fill="${c}" fill-opacity="0.25" stroke="${c}" stroke-width="2"/>
+            <circle cx="${half}" cy="${half}" r="${half-9}" fill="${c}" fill-opacity="0.9"/>
+            <text x="${half}" y="${half+4}" text-anchor="middle" font-size="10" fill="white">${recI[r.status]}</text>
+        </svg>`;
+        L.marker([r.lat, r.lng], {
+            icon: L.divIcon({ html: svg, iconSize:[size,size], iconAnchor:[half,half], className:'' }),
+            zIndexOffset: 100
+        }).addTo(map).bindPopup(
+            `<div style="padding:12px;font-family:'Plus Jakarta Sans',sans-serif">
+                <p style="color:rgba(156,200,216,.6);font-size:10px;font-family:monospace;margin:0 0 3px">${r.id}</p>
+                <p style="color:#f0fdff;font-size:13px;font-weight:700;margin:0 0 4px">${r.type}</p>
+                <p style="color:rgba(156,200,216,.6);font-size:11px;margin:0 0 8px">${r.zone}</p>
+                <p style="color:rgba(156,200,216,.5);font-size:10px;margin:0">Citoyen: ${r.citizen}</p>
+                ${r.technician ? `<p style="color:#5ee5f7;font-size:10px;margin:4px 0 0">Technicien: ${r.technician}</p>` : ''}
+            </div>`, { maxWidth: 220 }
+        );
+    });
+})();
+
+/* ── Sparkline incidents/résolus ────────────────────── */
+(function() {
+    const inc = <?php echo json_encode($monthly['incidents'], 15, 512) ?>;
+    const res = <?php echo json_encode($monthly['resolved'], 15, 512) ?>;
+    const svg = document.getElementById('mgr-sparkline');
+    if (!svg) return;
+    const W = 600, H = 100, pad = 10;
+    const max = Math.max(...inc, ...res) * 1.15;
+    const sx = i => pad + (i/(inc.length-1))*(W-pad*2);
+    const sy = v => pad + (1-v/max)*(H-pad*2);
+    const pts = (arr) => arr.map((v,i) => ({x:sx(i),y:sy(v)}));
+    const path = (arr, color) => {
+        const p = pts(arr);
+        const d = p.map((pt,i)=>`${i===0?'M':'L'}${pt.x},${pt.y}`).join(' ');
+        const el = document.createElementNS('http://www.w3.org/2000/svg','path');
+        el.setAttribute('d',d); el.setAttribute('fill','none');
+        el.setAttribute('stroke',color); el.setAttribute('stroke-width','2');
+        el.setAttribute('stroke-linecap','round'); el.setAttribute('opacity','0.8');
+        svg.appendChild(el);
+    };
+    path(inc, '#ef4444');
+    path(res, '#2dd4bf');
+    // dots
+    pts(inc).forEach((p,i) => {
+        const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+        c.setAttribute('cx',p.x); c.setAttribute('cy',p.y); c.setAttribute('r',3);
+        c.setAttribute('fill','#ef4444');
+        svg.appendChild(c);
+    });
+})();
+
+document.addEventListener('DOMContentLoaded', () => {
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+});
+</script>
+<?php $__env->stopPush(); ?>
+
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\ghada\Desktop\5ème\projet_Laravel\aquasecure\resources\views/manager/dashboard.blade.php ENDPATH**/ ?>

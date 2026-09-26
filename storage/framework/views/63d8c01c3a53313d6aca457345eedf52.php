@@ -69,6 +69,28 @@
     <main class="relative z-10 min-h-screen flex items-center justify-center px-4 py-28">
         <?php echo $__env->yieldContent('auth-content'); ?>
     </main>
+    
+    <!-- Toast Notifications -->
+    <?php if (isset($component)) { $__componentOriginal339c7fedf680433726dbafc2f156956f = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal339c7fedf680433726dbafc2f156956f = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.ui.toast','data' => []] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('ui.toast'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes([]); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal339c7fedf680433726dbafc2f156956f)): ?>
+<?php $attributes = $__attributesOriginal339c7fedf680433726dbafc2f156956f; ?>
+<?php unset($__attributesOriginal339c7fedf680433726dbafc2f156956f); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal339c7fedf680433726dbafc2f156956f)): ?>
+<?php $component = $__componentOriginal339c7fedf680433726dbafc2f156956f; ?>
+<?php unset($__componentOriginal339c7fedf680433726dbafc2f156956f); ?>
+<?php endif; ?>
 </div>
 
 <?php $__env->startPush('scripts'); ?>

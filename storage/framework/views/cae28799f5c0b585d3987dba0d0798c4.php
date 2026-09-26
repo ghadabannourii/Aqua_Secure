@@ -34,34 +34,50 @@
 <?php endif; ?>
             </div>
         </div>
-        <div class="flex items-center gap-2">
-            <button onclick="toggleTheme()" class="glass p-2 rounded-lg text-cyan-200 hover:text-white transition-colors" aria-label="Changer de thème">
-                <svg class="w-5 h-5 sun-icon hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                </svg>
-                <svg class="w-5 h-5 moon-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
-                </svg>
-            </button>
+        <div class="flex items-center gap-3">
+            <!-- Notifications -->
+            <?php if (isset($component)) { $__componentOriginal7169a5b356633be5dafc74bf7a8eb300 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal7169a5b356633be5dafc74bf7a8eb300 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.notification-center','data' => []] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('notification-center'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes([]); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal7169a5b356633be5dafc74bf7a8eb300)): ?>
+<?php $attributes = $__attributesOriginal7169a5b356633be5dafc74bf7a8eb300; ?>
+<?php unset($__attributesOriginal7169a5b356633be5dafc74bf7a8eb300); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal7169a5b356633be5dafc74bf7a8eb300)): ?>
+<?php $component = $__componentOriginal7169a5b356633be5dafc74bf7a8eb300; ?>
+<?php unset($__componentOriginal7169a5b356633be5dafc74bf7a8eb300); ?>
+<?php endif; ?>
             
-            <?php if(auth()->guard()->check()): ?>
-            <button onclick="toggleProfileModal()" class="hidden sm:flex items-center gap-2 glass px-3 py-2 rounded-lg text-white/80 hover:text-white transition-colors">
-                <span class="w-6 h-6 rounded-full bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center text-[10px] font-bold">
-                    <?php echo e(strtoupper(substr(auth()->user()->name ?? 'A', 0, 2))); ?>
-
-                </span>
-                <span class="text-xs font-semibold max-w-[120px] truncate"><?php echo e(auth()->user()->name ?? 'Admin'); ?></span>
-            </button>
-            
-            <form method="POST" action="<?php echo e(route('logout')); ?>" class="inline">
-                <?php echo csrf_field(); ?>
-                <button type="submit" class="glass p-2 rounded-lg text-cyan-200/70 hover:text-red-300 transition-colors" aria-label="Se déconnecter">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-                    </svg>
-                </button>
-            </form>
-            <?php endif; ?>
+            <!-- User Menu -->
+            <?php if (isset($component)) { $__componentOriginal42edc48abdcb6c65aa0760095ea712dd = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal42edc48abdcb6c65aa0760095ea712dd = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.user-menu','data' => []] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('user-menu'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes([]); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal42edc48abdcb6c65aa0760095ea712dd)): ?>
+<?php $attributes = $__attributesOriginal42edc48abdcb6c65aa0760095ea712dd; ?>
+<?php unset($__attributesOriginal42edc48abdcb6c65aa0760095ea712dd); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal42edc48abdcb6c65aa0760095ea712dd)): ?>
+<?php $component = $__componentOriginal42edc48abdcb6c65aa0760095ea712dd; ?>
+<?php unset($__componentOriginal42edc48abdcb6c65aa0760095ea712dd); ?>
+<?php endif; ?>
         </div>
     </nav>
 

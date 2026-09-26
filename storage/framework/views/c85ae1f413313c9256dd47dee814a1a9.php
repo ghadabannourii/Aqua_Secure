@@ -25,6 +25,28 @@
         <?php echo $__env->yieldContent('content'); ?>
     </div>
 
+    <!-- AI Assistant (Global) -->
+    <?php if (isset($component)) { $__componentOriginal251385c7632efe222fb0f2f6aa10f34b = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal251385c7632efe222fb0f2f6aa10f34b = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.ai-assistant','data' => []] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('ai-assistant'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes([]); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal251385c7632efe222fb0f2f6aa10f34b)): ?>
+<?php $attributes = $__attributesOriginal251385c7632efe222fb0f2f6aa10f34b; ?>
+<?php unset($__attributesOriginal251385c7632efe222fb0f2f6aa10f34b); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal251385c7632efe222fb0f2f6aa10f34b)): ?>
+<?php $component = $__componentOriginal251385c7632efe222fb0f2f6aa10f34b; ?>
+<?php unset($__componentOriginal251385c7632efe222fb0f2f6aa10f34b); ?>
+<?php endif; ?>
+
     <!-- Toast Container -->
     <div id="toast-container" class="fixed top-6 right-6 z-[100] flex flex-col gap-3 max-w-sm"></div>
 

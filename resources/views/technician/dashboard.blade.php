@@ -1,292 +1,304 @@
-@extends('layouts.manager')
+@extends('layouts.app')
 
-@section('title', 'Tableau de bord Technicien')
+@section('title', 'Espace Technicien — AquaSecure')
 
 @php
     use App\Data\PlaceholderData;
-    $zones = PlaceholderData::zones();
-    $stats = PlaceholderData::stats();
-    $user = session('user', ['name' => 'Technicien', 'role' => 'technician']);
+    $user          = session('user', ['name' => 'Amira Ben Ali', 'role' => 'technician']);
+    $interventions = PlaceholderData::technicianInterventions();
+    $equipment     = PlaceholderData::technicianEquipment();
+    $zones         = PlaceholderData::technicianZones();
+
+    $firstName     = explode(' ', $user['name'])[0];
+    $today         = count($interventions);
+    $inProgress    = count(array_filter($interventions, fn($i)=>$i['status']==='in_progress'));
+    $scheduled     = count(array_filter($interventions, fn($i)=>$i['status']==='scheduled'));
+    $completed     = count(array_filter($interventions, fn($i)=>$i['status']==='completed'));
+    $urgent        = count(array_filter($interventions, fn($i)=>$i['priority']==='high'));
+
+    $statusStyle = [
+        'in_progress' => ['bg'=>'bg-amber-500/15','text'=>'text-amber-300','dot'=>'bg-amber-400 animate-pulse','label'=>'En cours'],
+        'scheduled'   => ['bg'=>'bg-blue-500/15', 'text'=>'text-blue-300', 'dot'=>'bg-blue-400',              'label'=>'Planifiée'],
+        'completed'   => ['bg'=>'bg-teal-500/15', 'text'=>'text-teal-300', 'dot'=>'bg-teal-400',              'label'=>'Terminée'],
+    ];
+    $priorityStyle = [
+        'high'   => ['bg'=>'bg-red-500/15',  'text'=>'text-red-300',  'label'=>'Urgent'],
+        'medium' => ['bg'=>'bg-amber-500/15','text'=>'text-amber-300','label'=>'Moyen'],
+        'low'    => ['bg'=>'bg-blue-500/15', 'text'=>'text-blue-300', 'label'=>'Faible'],
+    ];
 @endphp
 
 @section('content')
-<div class="container mx-auto px-4 py-8">
-    <!-- Header -->
-    <div class="mb-8">
-        <div class="flex items-center justify-between mb-4">
-            <div class="flex items-center gap-3">
-                <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-500/20 to-cyan-600/20 border border-teal-400/25 flex items-center justify-center">
-                    <i data-lucide="hard-hat" class="w-7 h-7 text-teal-300"></i>
+<div class="min-h-screen">
+
+{{-- ── TOPBAR TECHNICIEN ──────────────────────────────────── --}}
+<nav class="sticky top-0 z-50 glass-strong px-4 sm:px-6 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center">
+            <i data-lucide="droplet" class="w-5 h-5 text-white"></i>
+        </div>
+        <span class="font-display font-bold text-white hidden sm:block">AquaSecure</span>
+        <span class="hidden sm:inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-400/20">
+            Espace Technicien
+        </span>
+    </div>
+    <div class="flex items-center gap-2">
+        <button onclick="toggleTheme()"
+                class="glass p-2 rounded-lg text-cyan-300 hover:text-white transition-colors">
+            <i data-lucide="sun"  class="w-4 h-4 sun-icon  hidden"></i>
+            <i data-lucide="moon" class="w-4 h-4 moon-icon"></i>
+        </button>
+        <x-notification-center />
+        <x-user-menu />
+    </div>
+</nav>
+
+<div class="container mx-auto px-4 py-6 max-w-5xl space-y-6 animate-fade-in-up">
+
+    {{-- ══ HEADER ══════════════════════════════════════════════ --}}
+    <div class="glass rounded-2xl p-5">
+        <div class="flex items-start justify-between gap-4">
+            <div>
+                <h1 class="text-2xl font-display font-bold text-white">
+                    Bonjour, {{ $firstName }} 👋
+                </h1>
+                <p class="text-cyan-100/55 text-sm mt-0.5">Technicien · Interventions terrain</p>
+                <p class="text-cyan-100/65 text-sm mt-2">
+                    Vous avez <strong class="text-white">{{ $today }}</strong> interventions
+                    @if($inProgress > 0)
+                        · <strong class="text-amber-300">{{ $inProgress }}</strong> en cours
+                    @endif
+                    @if($urgent > 0)
+                        · <strong class="text-red-300">{{ $urgent }}</strong> urgente(s)
+                    @endif
+                </p>
+            </div>
+            <a href="{{ route('technician.interventions.index') }}"
+               class="shrink-0 glass px-4 py-2 rounded-xl text-sm text-cyan-300 hover:text-white font-semibold
+                      flex items-center gap-2 transition-all hover:border-cyan-400/40">
+                <i data-lucide="list" class="w-4 h-4"></i>
+                <span class="hidden sm:inline">Toutes les interventions</span>
+            </a>
+        </div>
+    </div>
+
+    {{-- ══ 4 KPI CARDS ════════════════════════════════════════ --}}
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        @foreach([
+            ['val'=>$today,    'label'=>'Aujourd\'hui',  'icon'=>'calendar',     'bg'=>'bg-cyan-500/10',  'ic'=>'text-cyan-400'],
+            ['val'=>$inProgress,'label'=>'En cours',      'icon'=>'loader',        'bg'=>'bg-amber-500/10', 'ic'=>'text-amber-400'],
+            ['val'=>$completed, 'label'=>'Terminées',     'icon'=>'check-circle',  'bg'=>'bg-teal-500/10',  'ic'=>'text-teal-400'],
+            ['val'=>$urgent,    'label'=>'Urgentes',      'icon'=>'alert-triangle','bg'=>'bg-red-500/10',   'ic'=>'text-red-400'],
+        ] as $kpi)
+        <div class="glass rounded-2xl p-4 hover-lift">
+            <div class="w-10 h-10 rounded-xl {{ $kpi['bg'] }} flex items-center justify-center mb-3">
+                <i data-lucide="{{ $kpi['icon'] }}" class="w-5 h-5 {{ $kpi['ic'] }}"></i>
+            </div>
+            <p class="text-2xl font-display font-bold text-white">{{ $kpi['val'] }}</p>
+            <p class="text-xs text-cyan-100/55 mt-0.5">{{ $kpi['label'] }}</p>
+        </div>
+        @endforeach
+    </div>
+
+    {{-- ══ URGENTE EN TÊTE (si existe) ═══════════════════════ --}}
+    @php $urgentInt = array_values(array_filter($interventions, fn($i)=>$i['priority']==='high' && $i['status']==='in_progress'))[0] ?? null; @endphp
+    @if($urgentInt)
+    <div class="glass rounded-2xl p-5 border-red-500/30 ring-1 ring-red-500/20">
+        <div class="flex items-start justify-between gap-4">
+            <div class="flex items-start gap-3">
+                <div class="w-10 h-10 rounded-xl bg-red-500/15 flex items-center justify-center shrink-0">
+                    <i data-lucide="alert-triangle" class="w-5 h-5 text-red-400 animate-pulse"></i>
                 </div>
                 <div>
-                    <h1 class="text-3xl font-display font-bold text-white">Espace Technicien</h1>
-                    <p class="text-cyan-100/60 text-sm mt-1">{{ $user['name'] }} - Interventions terrain</p>
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="text-[10px] font-mono font-bold text-red-400">{{ $urgentInt['id'] }}</span>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-500/15 text-red-300">URGENT</span>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-300">En cours</span>
+                    </div>
+                    <p class="text-white font-bold">{{ $urgentInt['type'] }}</p>
+                    <p class="text-cyan-100/55 text-xs mt-0.5">
+                        <i data-lucide="map-pin" class="w-3 h-3 inline"></i>
+                        {{ $urgentInt['zone'] }} — {{ $urgentInt['address'] }}
+                    </p>
                 </div>
             </div>
-            <x-ripple-button size="md" onclick="showToast('Rapport genere', 'success')">
-                <i data-lucide="file-text" class="w-4 h-4"></i>
-                Nouveau rapport
-            </x-ripple-button>
-        </div>
-        <p class="text-cyan-100/70 max-w-3xl">
-            Gestion de vos interventions, assignations et rapport quotidien.
-        </p>
-    </div>
-
-    <!-- Quick Stats -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div class="glass p-5 rounded-2xl hover-lift">
-            <div class="flex items-start justify-between mb-3">
-                <div class="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center">
-                    <i data-lucide="clipboard-list" class="w-6 h-6 text-orange-400"></i>
-                </div>
-                <span class="text-xs font-semibold text-teal-400">+2</span>
-            </div>
-            <div class="text-2xl font-display font-bold text-white mb-1">5</div>
-            <div class="text-xs text-cyan-100/60">Interventions assignées</div>
-        </div>
-        
-        <div class="glass p-5 rounded-2xl hover-lift">
-            <div class="flex items-start justify-between mb-3">
-                <div class="w-12 h-12 rounded-xl bg-teal-500/10 flex items-center justify-center">
-                    <i data-lucide="check-circle" class="w-6 h-6 text-teal-400"></i>
-                </div>
-                <span class="text-xs font-semibold text-teal-400">+5</span>
-            </div>
-            <div class="text-2xl font-display font-bold text-white mb-1">23</div>
-            <div class="text-xs text-cyan-100/60">Interventions complétées</div>
-        </div>
-        
-        <div class="glass p-5 rounded-2xl hover-lift">
-            <div class="flex items-start justify-between mb-3">
-                <div class="w-12 h-12 rounded-xl bg-cyan-500/10 flex items-center justify-center">
-                    <i data-lucide="clock" class="w-6 h-6 text-cyan-400"></i>
-                </div>
-                <span class="text-xs font-semibold text-teal-400">-15min</span>
-            </div>
-            <div class="text-2xl font-display font-bold text-white mb-1">2.1h</div>
-            <div class="text-xs text-cyan-100/60">Temps moyen</div>
-        </div>
-        
-        <div class="glass p-5 rounded-2xl hover-lift">
-            <div class="flex items-start justify-between mb-3">
-                <div class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center">
-                    <i data-lucide="map-pin" class="w-6 h-6 text-blue-400"></i>
-                </div>
-            </div>
-            <div class="text-2xl font-display font-bold text-white mb-1">Tunis Nord</div>
-            <div class="text-xs text-cyan-100/60">Zone actuelle</div>
+            <a href="{{ route('technician.interventions.show', $urgentInt['id']) }}"
+               class="shrink-0 bg-gradient-to-r from-red-500/20 to-red-600/20 border border-red-500/30
+                      text-red-300 hover:text-white text-xs font-semibold px-4 py-2 rounded-xl transition-all">
+                Voir →
+            </a>
         </div>
     </div>
+    @endif
 
-    <!-- Main Content -->
-    <div class="grid lg:grid-cols-3 gap-6">
-        <!-- Interventions Column -->
-        <div class="lg:col-span-2 space-y-6">
-            <div class="glass-strong p-6 rounded-2xl">
-                <h3 class="text-xl font-display font-bold text-white mb-4 flex items-center gap-2">
-                    <i data-lucide="clipboard-list" class="w-5 h-5 text-orange-400"></i>
-                    Mes interventions du jour
-                </h3>
-                <div class="space-y-3">
-                    <!-- Intervention 1 -->
-                    <div class="glass p-5 rounded-xl hover-lift">
-                        <div class="flex items-start justify-between mb-3">
-                            <div class="flex-1">
-                                <div class="flex items-center gap-2 mb-2">
-                                    <span class="text-sm font-mono font-semibold text-cyan-300">#INT-089</span>
-                                    <x-badge color="#ef4444">Urgent</x-badge>
-                                    <x-badge color="#f97316">En cours</x-badge>
-                                </div>
-                                <h4 class="text-white font-semibold mb-1">Réparation fuite</h4>
-                                <p class="text-cyan-100/60 text-sm">
-                                    <i data-lucide="map-pin" class="w-3.5 h-3.5 inline"></i>
-                                    Tunis Nord - Rue Habib Bourguiba
-                                </p>
-                                <p class="text-cyan-100/50 text-xs mt-1">
-                                    <i data-lucide="clock" class="w-3.5 h-3.5 inline"></i>
-                                    09:00
-                                </p>
-                            </div>
-                            <div class="flex gap-2">
-                                <button class="glass p-2 rounded-lg text-cyan-300 hover:text-white transition-colors">
-                                    <i data-lucide="play" class="w-4 h-4"></i>
-                                </button>
-                                <button class="glass p-2 rounded-lg text-cyan-300 hover:text-white transition-colors">
-                                    <i data-lucide="info" class="w-4 h-4"></i>
-                                </button>
-                            </div>
-                        </div>
+    {{-- ══ INTERVENTIONS DU JOUR ═══════════════════════════════ --}}
+    <div class="glass rounded-2xl overflow-hidden">
+        <div class="px-5 py-4 border-b border-white/5 flex items-center justify-between">
+            <div>
+                <h2 class="text-white font-display font-bold">Mes interventions</h2>
+                <p class="text-cyan-100/50 text-xs mt-0.5">{{ $today }} assignées · {{ $scheduled }} planifiées</p>
+            </div>
+            <a href="{{ route('technician.interventions.index') }}"
+               class="text-xs text-cyan-400 hover:text-cyan-300 font-semibold transition-colors">
+                Tout voir →
+            </a>
+        </div>
+        <div class="divide-y divide-white/[.04]">
+            @foreach($interventions as $int)
+            @php
+                $ss = $statusStyle[$int['status']] ?? $statusStyle['scheduled'];
+                $ps = $priorityStyle[$int['priority']] ?? $priorityStyle['low'];
+            @endphp
+            <div class="flex items-center gap-3 px-5 py-4 hover:bg-white/[.025] transition-colors">
+                {{-- Priority dot --}}
+                <div class="w-9 h-9 rounded-xl {{ $ps['bg'] }} flex items-center justify-center shrink-0">
+                    @if($int['priority']==='high')
+                    <i data-lucide="alert-triangle" class="w-4 h-4 {{ $ps['text'] }}"></i>
+                    @elseif($int['status']==='in_progress')
+                    <i data-lucide="loader" class="w-4 h-4 {{ $ss['text'] }}"></i>
+                    @else
+                    <i data-lucide="wrench" class="w-4 h-4 text-cyan-400/70"></i>
+                    @endif
+                </div>
+                {{-- Info --}}
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-0.5 flex-wrap">
+                        <span class="text-[10px] font-mono font-bold text-cyan-400">{{ $int['id'] }}</span>
+                        <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold {{ $ps['bg'] }} {{ $ps['text'] }}">{{ $ps['label'] }}</span>
+                        <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold {{ $ss['bg'] }} {{ $ss['text'] }}">{{ $ss['label'] }}</span>
                     </div>
-
-                    <!-- Intervention 2 -->
-                    <div class="glass p-5 rounded-xl hover-lift">
-                        <div class="flex items-start justify-between mb-3">
-                            <div class="flex-1">
-                                <div class="flex items-center gap-2 mb-2">
-                                    <span class="text-sm font-mono font-semibold text-cyan-300">#INT-091</span>
-                                    <x-badge color="#06b6d4">Normal</x-badge>
-                                    <x-badge color="#06b6d4">Assignée</x-badge>
-                                </div>
-                                <h4 class="text-white font-semibold mb-1">Inspection capteurs</h4>
-                                <p class="text-cyan-100/60 text-sm">
-                                    <i data-lucide="map-pin" class="w-3.5 h-3.5 inline"></i>
-                                    Ariana - Avenue de la République
-                                </p>
-                                <p class="text-cyan-100/50 text-xs mt-1">
-                                    <i data-lucide="clock" class="w-3.5 h-3.5 inline"></i>
-                                    11:30
-                                </p>
-                            </div>
-                            <div class="flex gap-2">
-                                <button class="glass p-2 rounded-lg text-cyan-300 hover:text-white transition-colors">
-                                    <i data-lucide="play" class="w-4 h-4"></i>
-                                </button>
-                                <button class="glass p-2 rounded-lg text-cyan-300 hover:text-white transition-colors">
-                                    <i data-lucide="info" class="w-4 h-4"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Intervention 3 -->
-                    <div class="glass p-5 rounded-xl hover-lift">
-                        <div class="flex items-start justify-between mb-3">
-                            <div class="flex-1">
-                                <div class="flex items-center gap-2 mb-2">
-                                    <span class="text-sm font-mono font-semibold text-cyan-300">#INT-092</span>
-                                    <x-badge color="#3b82f6">Faible</x-badge>
-                                    <x-badge color="#3b82f6">Planifiée</x-badge>
-                                </div>
-                                <h4 class="text-white font-semibold mb-1">Maintenance préventive</h4>
-                                <p class="text-cyan-100/60 text-sm">
-                                    <i data-lucide="map-pin" class="w-3.5 h-3.5 inline"></i>
-                                    Tunis Sud - Boulevard du 7 Novembre
-                                </p>
-                                <p class="text-cyan-100/50 text-xs mt-1">
-                                    <i data-lucide="clock" class="w-3.5 h-3.5 inline"></i>
-                                    14:00
-                                </p>
-                            </div>
-                            <div class="flex gap-2">
-                                <button class="glass p-2 rounded-lg text-cyan-300 hover:text-white transition-colors">
-                                    <i data-lucide="play" class="w-4 h-4"></i>
-                                </button>
-                                <button class="glass p-2 rounded-lg text-cyan-300 hover:text-white transition-colors">
-                                    <i data-lucide="info" class="w-4 h-4"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                    <p class="text-white text-sm font-semibold truncate">{{ $int['type'] }}</p>
+                    <p class="text-cyan-100/45 text-xs truncate">
+                        <i data-lucide="map-pin" class="w-3 h-3 inline"></i>
+                        {{ $int['zone'] }} · {{ $int['scheduled_time'] }}
+                    </p>
+                </div>
+                {{-- Actions --}}
+                <div class="flex gap-1.5 shrink-0">
+                    @if($int['status']==='scheduled')
+                    <button onclick="showToast('Intervention démarrée', 'success')"
+                            class="glass p-2 rounded-lg text-teal-400 hover:text-white transition-colors"
+                            title="Démarrer">
+                        <i data-lucide="play" class="w-3.5 h-3.5"></i>
+                    </button>
+                    @elseif($int['status']==='in_progress')
+                    <a href="{{ route('technician.interventions.report', $int['id']) }}"
+                       class="glass p-2 rounded-lg text-amber-400 hover:text-white transition-colors"
+                       title="Rapport">
+                        <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+                    </a>
+                    @endif
+                    <a href="{{ route('technician.interventions.show', $int['id']) }}"
+                       class="glass p-2 rounded-lg text-cyan-400/60 hover:text-cyan-300 transition-colors"
+                       title="Détails">
+                        <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                    </a>
                 </div>
             </div>
+            @endforeach
+        </div>
+    </div>
 
-            <!-- Historique -->
-            <div class="glass-strong p-6 rounded-2xl">
-                <h3 class="text-lg font-display font-bold text-white mb-4 flex items-center gap-2">
-                    <i data-lucide="history" class="w-5 h-5 text-teal-400"></i>
-                    Interventions complétées cette semaine
-                </h3>
-                <div class="space-y-2">
-                    <div class="glass p-4 rounded-lg flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-lg bg-teal-500/10 flex items-center justify-center">
-                                <i data-lucide="check" class="w-4 h-4 text-teal-400"></i>
-                            </div>
-                            <div>
-                                <h5 class="text-white text-sm font-semibold">Réparation vanne</h5>
-                                <p class="text-cyan-100/50 text-xs">Sfax Centre - Hier 14:30</p>
-                            </div>
-                        </div>
-                        <span class="text-xs text-cyan-100/60">1h 45min</span>
-                    </div>
+    {{-- ══ ÉQUIPEMENT + ZONES côte à côte ═══════════════════ --}}
+    <div class="grid sm:grid-cols-2 gap-6">
 
-                    <div class="glass p-4 rounded-lg flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-lg bg-teal-500/10 flex items-center justify-center">
-                                <i data-lucide="check" class="w-4 h-4 text-teal-400"></i>
-                            </div>
-                            <div>
-                                <h5 class="text-white text-sm font-semibold">Inspection qualité eau</h5>
-                                <p class="text-cyan-100/50 text-xs">Sousse Nord - 23 sept 10:15</p>
-                            </div>
-                        </div>
-                        <span class="text-xs text-cyan-100/60">2h 10min</span>
-                    </div>
+        {{-- Équipement --}}
+        <div class="glass rounded-2xl overflow-hidden">
+            <div class="px-5 py-4 border-b border-white/5 flex items-center justify-between">
+                <h2 class="text-white font-display font-bold text-sm">Mon équipement</h2>
+                <a href="{{ route('technician.equipment') }}"
+                   class="text-xs text-cyan-400 hover:text-cyan-300 font-semibold transition-colors">
+                    Tout voir →
+                </a>
+            </div>
+            <div class="divide-y divide-white/[.04]">
+                @foreach(array_slice($equipment, 0, 5) as $eq)
+                @php
+                    $eqStyle = [
+                        'available' => ['dot'=>'bg-teal-400','text'=>'text-teal-300','label'=>'OK'],
+                        'in_use'    => ['dot'=>'bg-amber-400','text'=>'text-amber-300','label'=>'Utilisé'],
+                        'low_stock' => ['dot'=>'bg-red-400 animate-pulse','text'=>'text-red-300','label'=>'Stock bas'],
+                        'maintenance'=>['dot'=>'bg-blue-400','text'=>'text-blue-300','label'=>'Maintenance'],
+                    ][$eq['status']] ?? ['dot'=>'bg-slate-400','text'=>'text-slate-300','label'=>$eq['status']];
+                @endphp
+                <div class="flex items-center gap-3 px-5 py-3 hover:bg-white/[.02] transition-colors">
+                    <span class="w-2 h-2 rounded-full {{ $eqStyle['dot'] }} shrink-0"></span>
+                    <span class="text-sm text-cyan-100/75 flex-1 truncate">{{ $eq['name'] }}</span>
+                    <span class="text-xs font-semibold {{ $eqStyle['text'] }} shrink-0">{{ $eqStyle['label'] }}</span>
                 </div>
+                @endforeach
             </div>
         </div>
 
-        <!-- Sidebar -->
-        <div class="space-y-6">
-            <!-- Équipement -->
-            <div class="glass-strong p-6 rounded-2xl">
-                <h3 class="text-lg font-display font-bold text-white mb-4 flex items-center gap-2">
-                    <i data-lucide="wrench" class="w-5 h-5 text-blue-400"></i>
-                    Mon équipement
-                </h3>
-                <div class="space-y-3">
-                    <div class="flex items-center justify-between py-2 border-b border-white/5">
-                        <span class="text-sm text-cyan-100/80">Kit réparation</span>
-                        <x-badge color="#14b8a6">OK</x-badge>
+        {{-- Zones assignées + Contact urgence --}}
+        <div class="space-y-4">
+            <div class="glass rounded-2xl overflow-hidden">
+                <div class="px-5 py-4 border-b border-white/5">
+                    <h2 class="text-white font-display font-bold text-sm">Mes zones</h2>
+                </div>
+                <div class="divide-y divide-white/[.04]">
+                    @foreach($zones as $zone)
+                    <div class="flex items-center gap-3 px-5 py-3 hover:bg-white/[.02] transition-colors">
+                        <span class="text-lg shrink-0">{{ $zone['emoji'] }}</span>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-white text-sm font-semibold">{{ $zone['name'] }}</p>
+                            <p class="text-cyan-100/40 text-xs">{{ $zone['sensors'] }} capteurs · {{ $zone['quality'] }}% qualité</p>
+                        </div>
+                        <span class="w-2 h-2 rounded-full shrink-0
+                            {{ $zone['status']==='normal' ? 'bg-teal-400' : ($zone['status']==='alert' ? 'bg-amber-400' : 'bg-red-400') }}">
+                        </span>
                     </div>
-                    <div class="flex items-center justify-between py-2 border-b border-white/5">
-                        <span class="text-sm text-cyan-100/80">Détecteur fuite</span>
-                        <x-badge color="#14b8a6">OK</x-badge>
-                    </div>
-                    <div class="flex items-center justify-between py-2 border-b border-white/5">
-                        <span class="text-sm text-cyan-100/80">Multimètre</span>
-                        <x-badge color="#14b8a6">OK</x-badge>
-                    </div>
-                    <div class="flex items-center justify-between py-2 border-b border-white/5">
-                        <span class="text-sm text-cyan-100/80">Vanne 3/4"</span>
-                        <x-badge color="#f97316">Stock faible</x-badge>
-                    </div>
+                    @endforeach
                 </div>
             </div>
 
-            <!-- Zones -->
-            <div class="glass-strong p-6 rounded-2xl">
-                <h3 class="text-lg font-display font-bold text-white mb-4 flex items-center gap-2">
-                    <i data-lucide="map" class="w-5 h-5 text-cyan-400"></i>
-                    Mes zones
-                </h3>
-                <div class="space-y-2">
-                    <div class="glass p-3 rounded-lg flex items-center gap-2">
-                        <i data-lucide="map-pin" class="w-4 h-4 text-cyan-400"></i>
-                        <span class="text-sm text-white">Tunis Nord</span>
-                    </div>
-                    <div class="glass p-3 rounded-lg flex items-center gap-2">
-                        <i data-lucide="map-pin" class="w-4 h-4 text-cyan-400"></i>
-                        <span class="text-sm text-white">Ariana</span>
-                    </div>
-                    <div class="glass p-3 rounded-lg flex items-center gap-2">
-                        <i data-lucide="map-pin" class="w-4 h-4 text-cyan-400"></i>
-                        <span class="text-sm text-white">Tunis Sud</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Contact urgence -->
-            <div class="glass-strong p-6 rounded-2xl">
-                <h3 class="text-lg font-display font-bold text-white mb-4 flex items-center gap-2">
-                    <i data-lucide="phone" class="w-5 h-5 text-red-400"></i>
-                    Contact urgence
-                </h3>
-                <x-ripple-button size="md" class="w-full" onclick="showToast('Appel dispatching', 'info')">
-                    <i data-lucide="phone-call" class="w-4 h-4"></i>
+            {{-- Contact urgence --}}
+            <div class="glass rounded-2xl p-4 text-center">
+                <p class="text-xs text-cyan-100/50 mb-3">Besoin d'aide ?</p>
+                <button onclick="showToast('Appel dispatching en cours...', 'info')"
+                        class="flex items-center justify-center gap-2 w-full bg-red-500/10 border border-red-500/25
+                               text-red-300 hover:text-white hover:bg-red-500/20 text-sm font-semibold
+                               py-2.5 rounded-xl transition-all">
+                    <i data-lucide="phone" class="w-4 h-4"></i>
                     Appeler le dispatching
-                </x-ripple-button>
+                </button>
             </div>
         </div>
     </div>
-</div>
+
+    {{-- ══ HISTORIQUE RÉCENT ═══════════════════════════════════ --}}
+    @if($completed > 0)
+    <div class="glass rounded-2xl overflow-hidden">
+        <div class="px-5 py-4 border-b border-white/5">
+            <h2 class="text-white font-display font-bold text-sm">Récemment terminées</h2>
+        </div>
+        <div class="divide-y divide-white/[.04]">
+            @foreach(array_values(array_filter($interventions, fn($i)=>$i['status']==='completed')) as $int)
+            <div class="flex items-center gap-3 px-5 py-3.5 hover:bg-white/[.02] transition-colors">
+                <div class="w-8 h-8 rounded-lg bg-teal-500/10 flex items-center justify-center shrink-0">
+                    <i data-lucide="check" class="w-4 h-4 text-teal-400"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-white text-xs font-semibold truncate">{{ $int['type'] }}</p>
+                    <p class="text-cyan-100/40 text-[11px]">{{ $int['zone'] }}</p>
+                </div>
+                <span class="text-[10px] text-teal-300/70 font-semibold shrink-0">
+                    {{ isset($int['completed_at']) ? $int['completed_at'] : 'Terminée' }}
+                </span>
+            </div>
+            @endforeach
+        </div>
+    </div>
+    @endif
+
+</div>{{-- /container --}}
+</div>{{-- /min-h-screen --}}
+@endsection
 
 @push('scripts')
 <script>
-    if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
-    }
+document.addEventListener('DOMContentLoaded', () => {
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+});
 </script>
 @endpush
-@endsection

@@ -69,59 +69,256 @@
         </div>
 
         <!-- Register Form -->
-        <form method="POST" action="{{ route('register.post') }}" class="space-y-4">
+        <form method="POST" action="{{ route('register.post') }}" id="registerForm" class="space-y-4">
             @csrf
             
             <div>
-                <label class="text-xs font-semibold text-cyan-100/70 mb-2 block">Nom complet</label>
-                <input type="text" name="name" required placeholder="Ex. Yassine Hamdi" class="w-full bg-slate-950/35 border border-cyan-400/15 rounded-xl px-4 py-3 text-sm text-white placeholder:text-cyan-100/30 focus:outline-none focus:border-cyan-400/50 transition-colors" />
+                <label class="text-xs font-semibold text-cyan-100/70 mb-2 block">
+                    Nom complet <span class="text-rose-400">*</span>
+                </label>
+                <div class="relative">
+                    <input 
+                        type="text" 
+                        name="name" 
+                        id="name"
+                        required 
+                        minlength="3"
+                        placeholder="Ex. Yassine Hamdi" 
+                        class="w-full bg-slate-950/35 border border-cyan-400/15 rounded-xl pl-11 pr-4 py-3 text-sm text-white placeholder:text-cyan-100/30 focus:outline-none focus:border-cyan-400/50 transition-colors" 
+                    />
+                    <i data-lucide="user" class="w-4 h-4 text-cyan-100/30 absolute left-4 top-1/2 -translate-y-1/2"></i>
+                </div>
             </div>
 
             <div>
-                <label class="text-xs font-semibold text-cyan-100/70 mb-2 block">Adresse email</label>
-                <input type="email" name="email" required placeholder="vous@exemple.tn" class="w-full bg-slate-950/35 border border-cyan-400/15 rounded-xl px-4 py-3 text-sm text-white placeholder:text-cyan-100/30 focus:outline-none focus:border-cyan-400/50 transition-colors" />
+                <label class="text-xs font-semibold text-cyan-100/70 mb-2 block">
+                    Adresse email <span class="text-rose-400">*</span>
+                </label>
+                <div class="relative">
+                    <input 
+                        type="email" 
+                        name="email" 
+                        id="email"
+                        required 
+                        placeholder="vous@exemple.tn" 
+                        class="w-full bg-slate-950/35 border border-cyan-400/15 rounded-xl pl-11 pr-4 py-3 text-sm text-white placeholder:text-cyan-100/30 focus:outline-none focus:border-cyan-400/50 transition-colors" 
+                    />
+                    <i data-lucide="mail" class="w-4 h-4 text-cyan-100/30 absolute left-4 top-1/2 -translate-y-1/2"></i>
+                </div>
             </div>
 
             <div>
-                <label class="text-xs font-semibold text-cyan-100/70 mb-2 block">Mot de passe</label>
-                <input type="password" name="password" required minlength="6" placeholder="••••••••" class="w-full bg-slate-950/35 border border-cyan-400/15 rounded-xl px-4 py-3 text-sm text-white placeholder:text-cyan-100/30 focus:outline-none focus:border-cyan-400/50 transition-colors" />
+                <label class="text-xs font-semibold text-cyan-100/70 mb-2 block">
+                    Numéro de téléphone
+                </label>
+                <div class="relative">
+                    <input 
+                        type="tel" 
+                        name="phone" 
+                        placeholder="+216 XX XXX XXX" 
+                        class="w-full bg-slate-950/35 border border-cyan-400/15 rounded-xl pl-11 pr-4 py-3 text-sm text-white placeholder:text-cyan-100/30 focus:outline-none focus:border-cyan-400/50 transition-colors" 
+                    />
+                    <i data-lucide="phone" class="w-4 h-4 text-cyan-100/30 absolute left-4 top-1/2 -translate-y-1/2"></i>
+                </div>
             </div>
 
             <div>
-                <label class="text-xs font-semibold text-cyan-100/70 mb-2 block">Confirmer le mot de passe</label>
-                <input type="password" name="password_confirmation" required minlength="6" placeholder="••••••••" class="w-full bg-slate-950/35 border border-cyan-400/15 rounded-xl px-4 py-3 text-sm text-white placeholder:text-cyan-100/30 focus:outline-none focus:border-cyan-400/50 transition-colors" />
+                <label class="text-xs font-semibold text-cyan-100/70 mb-2 block">
+                    Mot de passe <span class="text-rose-400">*</span>
+                </label>
+                <div class="relative">
+                    <input 
+                        type="password" 
+                        name="password" 
+                        id="password" 
+                        required 
+                        minlength="6" 
+                        placeholder="••••••••" 
+                        class="w-full bg-slate-950/35 border border-cyan-400/15 rounded-xl pl-11 pr-11 py-3 text-sm text-white placeholder:text-cyan-100/30 focus:outline-none focus:border-cyan-400/50 transition-colors" 
+                    />
+                    <i data-lucide="lock" class="w-4 h-4 text-cyan-100/30 absolute left-4 top-1/2 -translate-y-1/2"></i>
+                    <button type="button" onclick="togglePasswordVisibility('password')" class="text-cyan-100/35 hover:text-cyan-300 absolute right-4 top-1/2 -translate-y-1/2" aria-label="Afficher le mot de passe">
+                        <i data-lucide="eye" class="w-4 h-4 eye-icon-password"></i>
+                        <i data-lucide="eye-off" class="w-4 h-4 eye-off-icon-password hidden"></i>
+                    </button>
+                </div>
+                <!-- Password Strength Indicator -->
+                <div class="mt-2">
+                    <div class="flex gap-1 mb-1">
+                        <div class="h-1 flex-1 rounded-full bg-slate-800/50" id="strength-bar-1"></div>
+                        <div class="h-1 flex-1 rounded-full bg-slate-800/50" id="strength-bar-2"></div>
+                        <div class="h-1 flex-1 rounded-full bg-slate-800/50" id="strength-bar-3"></div>
+                        <div class="h-1 flex-1 rounded-full bg-slate-800/50" id="strength-bar-4"></div>
+                    </div>
+                    <p class="text-xs text-cyan-100/50" id="strength-text">Minimum 6 caractères</p>
+                </div>
+            </div>
+
+            <div>
+                <label class="text-xs font-semibold text-cyan-100/70 mb-2 block">
+                    Confirmer le mot de passe <span class="text-rose-400">*</span>
+                </label>
+                <div class="relative">
+                    <input 
+                        type="password" 
+                        name="password_confirmation" 
+                        id="password_confirmation" 
+                        required 
+                        minlength="6" 
+                        placeholder="••••••••" 
+                        class="w-full bg-slate-950/35 border border-cyan-400/15 rounded-xl pl-11 pr-11 py-3 text-sm text-white placeholder:text-cyan-100/30 focus:outline-none focus:border-cyan-400/50 transition-colors" 
+                    />
+                    <i data-lucide="lock" class="w-4 h-4 text-cyan-100/30 absolute left-4 top-1/2 -translate-y-1/2"></i>
+                    <button type="button" onclick="togglePasswordVisibility('password_confirmation')" class="text-cyan-100/35 hover:text-cyan-300 absolute right-4 top-1/2 -translate-y-1/2" aria-label="Afficher le mot de passe">
+                        <i data-lucide="eye" class="w-4 h-4 eye-icon-confirmation"></i>
+                        <i data-lucide="eye-off" class="w-4 h-4 eye-off-icon-confirmation hidden"></i>
+                    </button>
+                </div>
+                <p class="text-xs text-rose-400 mt-1.5 hidden" id="password-match-error">
+                    <i data-lucide="alert-circle" class="w-3.5 h-3.5 inline"></i>
+                    Les mots de passe ne correspondent pas
+                </p>
             </div>
 
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="text-xs font-semibold text-cyan-100/70 mb-2 block">Profil</label>
-                    <select name="role" class="w-full bg-slate-950/35 border border-cyan-400/15 rounded-xl px-3 py-3 text-sm text-white focus:outline-none focus:border-cyan-400/50">
-                        <option value="citizen">Citoyen</option>
-                        <option value="technician">Technicien</option>
-                        <option value="manager">Gestionnaire</option>
-                    </select>
+                    <div class="relative">
+                        <select name="role" class="w-full bg-slate-950/35 border border-cyan-400/15 rounded-xl pl-11 pr-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-400/50 appearance-none cursor-pointer">
+                            <option value="citizen">Citoyen</option>
+                            <option value="technician">Technicien</option>
+                            <option value="manager">Gestionnaire</option>
+                        </select>
+                        <i data-lucide="user-circle" class="w-4 h-4 text-cyan-100/30 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+                        <i data-lucide="chevron-down" class="w-4 h-4 text-cyan-100/30 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+                    </div>
                 </div>
                 <div>
-                    <label class="text-xs font-semibold text-cyan-100/70 mb-2 block">Quartier</label>
-                    <select name="zone" class="w-full bg-slate-950/35 border border-cyan-400/15 rounded-xl px-3 py-3 text-sm text-white focus:outline-none focus:border-cyan-400/50">
-                        @foreach(App\Data\PlaceholderData::zones() as $zone)
-                        <option>{{ $zone['name'] }}</option>
-                        @endforeach
-                    </select>
+                    <label class="text-xs font-semibold text-cyan-100/70 mb-2 block">Zone</label>
+                    <div class="relative">
+                        <select name="zone" class="w-full bg-slate-950/35 border border-cyan-400/15 rounded-xl pl-11 pr-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-400/50 appearance-none cursor-pointer">
+                            @foreach(App\Data\PlaceholderData::zones() as $zone)
+                            <option>{{ $zone['name'] }}</option>
+                            @endforeach
+                        </select>
+                        <i data-lucide="map-pin" class="w-4 h-4 text-cyan-100/30 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+                        <i data-lucide="chevron-down" class="w-4 h-4 text-cyan-100/30 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+                    </div>
                 </div>
             </div>
 
+            <!-- Terms Checkbox -->
+            <div class="flex items-start gap-3 p-4 rounded-xl bg-cyan-500/5 border border-cyan-400/10">
+                <input 
+                    type="checkbox" 
+                    name="terms" 
+                    id="terms" 
+                    required
+                    class="mt-0.5 w-4 h-4 rounded border-cyan-400/30 bg-slate-950/50 text-cyan-500 focus:ring-2 focus:ring-cyan-400/50 focus:ring-offset-0"
+                />
+                <label for="terms" class="text-xs text-cyan-100/70 leading-relaxed">
+                    J'accepte les <a href="#" class="text-cyan-400 hover:text-cyan-300 underline">conditions d'utilisation</a> 
+                    et la <a href="#" class="text-cyan-400 hover:text-cyan-300 underline">politique de confidentialité</a> d'AquaSecure
+                </label>
+            </div>
+
             <x-ripple-button type="submit" size="lg" class="w-full flex items-center justify-center gap-2">
+                <i data-lucide="user-plus" class="w-5 h-5"></i>
                 Créer mon compte
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                </svg>
+                <i data-lucide="arrow-right" class="w-4 h-4"></i>
             </x-ripple-button>
         </form>
 
         <p class="text-xs text-cyan-100/40 mt-4 text-center">
-            En vous inscrivant, vous acceptez nos conditions d'utilisation
+            Déjà inscrit ? 
+            <a href="{{ route('auth.login') }}" class="text-cyan-400 hover:text-cyan-300 font-semibold">
+                Se connecter
+            </a>
         </p>
     </section>
 </div>
+
+@push('scripts')
+<script>
+    // Password visibility toggle
+    function togglePasswordVisibility(fieldId) {
+        const input = document.getElementById(fieldId);
+        const eyeIcon = document.querySelector(`.eye-icon-${fieldId.replace('_', '-')}`);
+        const eyeOffIcon = document.querySelector(`.eye-off-icon-${fieldId.replace('_', '-')}`);
+        
+        if (input.type === 'password') {
+            input.type = 'text';
+            eyeIcon.classList.add('hidden');
+            eyeOffIcon.classList.remove('hidden');
+        } else {
+            input.type = 'password';
+            eyeIcon.classList.remove('hidden');
+            eyeOffIcon.classList.add('hidden');
+        }
+    }
+    
+    // Password strength checker
+    const passwordInput = document.getElementById('password');
+    const strengthBars = [
+        document.getElementById('strength-bar-1'),
+        document.getElementById('strength-bar-2'),
+        document.getElementById('strength-bar-3'),
+        document.getElementById('strength-bar-4'),
+    ];
+    const strengthText = document.getElementById('strength-text');
+    
+    passwordInput.addEventListener('input', function() {
+        const password = this.value;
+        let strength = 0;
+        
+        // Reset bars
+        strengthBars.forEach(bar => {
+            bar.style.background = '#1e293b';
+        });
+        
+        if (password.length >= 6) strength++;
+        if (password.length >= 10) strength++;
+        if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
+        if (/[0-9]/.test(password) && /[^A-Za-z0-9]/.test(password)) strength++;
+        
+        const colors = ['#ef4444', '#f97316', '#eab308', '#22c55e'];
+        const texts = ['Faible', 'Moyen', 'Bon', 'Excellent'];
+        
+        if (strength > 0) {
+            for (let i = 0; i < strength; i++) {
+                strengthBars[i].style.background = colors[strength - 1];
+            }
+            strengthText.textContent = `Force du mot de passe : ${texts[strength - 1]}`;
+            strengthText.style.color = colors[strength - 1];
+        } else {
+            strengthText.textContent = 'Minimum 6 caractères';
+            strengthText.style.color = 'rgba(240, 253, 255, 0.5)';
+        }
+    });
+    
+    // Password match validation
+    const confirmInput = document.getElementById('password_confirmation');
+    const matchError = document.getElementById('password-match-error');
+    
+    confirmInput.addEventListener('input', function() {
+        if (this.value && this.value !== passwordInput.value) {
+            matchError.classList.remove('hidden');
+            this.classList.add('border-rose-400');
+        } else {
+            matchError.classList.add('hidden');
+            this.classList.remove('border-rose-400');
+        }
+    });
+    
+    // Form validation
+    document.getElementById('registerForm').addEventListener('submit', function(e) {
+        if (passwordInput.value !== confirmInput.value) {
+            e.preventDefault();
+            matchError.classList.remove('hidden');
+            confirmInput.focus();
+            return;
+        }
+    });
+</script>
+@endpush
 @endsection

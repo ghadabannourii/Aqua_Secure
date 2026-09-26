@@ -216,6 +216,122 @@
     </div>
 </section>
 
+<!-- How It Works Section -->
+<section class="relative px-6 py-24 max-w-6xl mx-auto">
+    <div class="text-center mb-16">
+        <h2 class="text-3xl md:text-5xl font-display font-bold text-white mb-4">
+            Comment fonctionne <span class="text-gradient">AquaSecure</span> ?
+        </h2>
+        <p class="text-cyan-100/60 max-w-2xl mx-auto">
+            Un écosystème simple qui transforme chaque citoyen en acteur de la qualité de l'eau
+        </p>
+    </div>
+
+    <div class="grid md:grid-cols-4 gap-6">
+        @php
+            $steps = [
+                ['icon' => 'user', 'title' => 'Le citoyen signale', 'desc' => 'Une fuite, une coupure ou un problème de qualité détecté'],
+                ['icon' => 'bell', 'title' => 'Le système alerte', 'desc' => 'Le gestionnaire reçoit la notification en temps réel'],
+                ['icon' => 'shield', 'title' => 'Le technicien intervient', 'desc' => 'L\'équipe de terrain se déplace et répare'],
+                ['icon' => 'check-circle', 'title' => 'Le problème est résolu', 'desc' => 'Le citoyen est notifié de la résolution'],
+            ];
+        @endphp
+        @foreach($steps as $index => $step)
+        <div class="relative">
+            <div class="glass p-6 rounded-2xl hover-lift text-center">
+                <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white mb-4 shadow-lg shadow-cyan-500/25">
+                    <i data-lucide="{{ $step['icon'] }}" class="w-8 h-8"></i>
+                </div>
+                <div class="absolute -top-3 -right-3 w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center text-white font-display font-bold shadow-lg">
+                    {{ $index + 1 }}
+                </div>
+                <h3 class="text-lg font-display font-bold text-white mb-2">{{ $step['title'] }}</h3>
+                <p class="text-sm text-cyan-100/60">{{ $step['desc'] }}</p>
+            </div>
+            @if($index < 3)
+            <div class="hidden md:block absolute top-1/2 -right-3 z-10">
+                <i data-lucide="arrow-right" class="w-6 h-6 text-cyan-400/40"></i>
+            </div>
+            @endif
+        </div>
+        @endforeach
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="relative px-6 py-24 max-w-6xl mx-auto">
+    <div class="text-center mb-16">
+        <h2 class="text-3xl md:text-5xl font-display font-bold text-white mb-4">
+            Fonctionnalités <span class="text-gradient">intelligentes</span>
+        </h2>
+        <p class="text-cyan-100/60 max-w-2xl mx-auto">
+            Des outils modernes pour une gestion efficace des ressources en eau
+        </p>
+    </div>
+
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        @php
+            $features = [
+                ['icon' => 'droplet', 'title' => 'Signalement d\'incidents', 'desc' => 'Déclarez fuites, coupures et problèmes de qualité en quelques clics', 'color' => 'cyan'],
+                ['icon' => 'gauge', 'title' => 'Monitoring en temps réel', 'desc' => 'Suivez la pression, le débit et la qualité de l\'eau 24/7', 'color' => 'blue'],
+                ['icon' => 'flask', 'title' => 'Analyse de la qualité', 'desc' => 'Contrôle continu des paramètres physico-chimiques', 'color' => 'teal'],
+                ['icon' => 'map-pin', 'title' => 'Géolocalisation', 'desc' => 'Localisation précise des incidents et interventions', 'color' => 'emerald'],
+                ['icon' => 'bell-ring', 'title' => 'Notifications instantanées', 'desc' => 'Alertes immédiates en cas d\'anomalie détectée', 'color' => 'orange'],
+                ['icon' => 'bar-chart-2', 'title' => 'Tableaux de bord', 'desc' => 'Visualisez les KPIs et suivez les performances', 'color' => 'indigo'],
+            ];
+        @endphp
+        @foreach($features as $feature)
+        <x-ui.card hover class="group">
+            <div class="w-12 h-12 rounded-xl bg-{{ $feature['color'] }}-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                <i data-lucide="{{ $feature['icon'] }}" class="w-6 h-6 text-{{ $feature['color'] }}-400"></i>
+            </div>
+            <h3 class="text-lg font-display font-bold text-white mb-2">{{ $feature['title'] }}</h3>
+            <p class="text-sm text-cyan-100/60">{{ $feature['desc'] }}</p>
+        </x-ui.card>
+        @endforeach
+    </div>
+</section>
+
+<!-- Roles Section -->
+<section class="relative px-6 py-24 max-w-6xl mx-auto">
+    <div class="text-center mb-16">
+        <h2 class="text-3xl md:text-5xl font-display font-bold text-white mb-4">
+            Quatre rôles, <span class="text-gradient">une mission commune</span>
+        </h2>
+        <p class="text-cyan-100/60 max-w-2xl mx-auto">
+            Chaque acteur contribue à la sécurité et à la qualité de l'eau
+        </p>
+    </div>
+
+    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        @php
+            $roles = [
+                ['icon' => 'user', 'title' => 'Citoyen', 'desc' => 'Signalez les incidents, suivez vos déclarations et consultez vos factures', 'color' => 'from-cyan-500 to-blue-600', 'features' => ['Signaler un problème', 'Suivre mes déclarations', 'Consulter factures']],
+                ['icon' => 'shield', 'title' => 'Technicien', 'desc' => 'Gérez vos interventions sur le terrain et créez des rapports d\'intervention', 'color' => 'from-teal-500 to-emerald-600', 'features' => ['Interventions assignées', 'Rapports terrain', 'Gestion équipement']],
+                ['icon' => 'clipboard-list', 'title' => 'Gestionnaire', 'desc' => 'Supervisez le réseau, coordonnez les équipes et analysez les performances', 'color' => 'from-blue-500 to-indigo-600', 'features' => ['Vue globale réseau', 'Gestion équipes', 'Analytics avancés']],
+                ['icon' => 'shield-check', 'title' => 'Administrateur', 'desc' => 'Gérez les utilisateurs, la sécurité et les paramètres système', 'color' => 'from-purple-500 to-pink-600', 'features' => ['Gestion utilisateurs', 'Sécurité système', 'Logs & audits']],
+            ];
+        @endphp
+        @foreach($roles as $role)
+        <x-ui.card hover class="group text-center">
+            <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br {{ $role['color'] }} flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <i data-lucide="{{ $role['icon'] }}" class="w-8 h-8"></i>
+            </div>
+            <h3 class="text-xl font-display font-bold text-white mb-2">{{ $role['title'] }}</h3>
+            <p class="text-sm text-cyan-100/60 mb-4">{{ $role['desc'] }}</p>
+            <div class="pt-4 border-t border-white/5 space-y-2">
+                @foreach($role['features'] as $feature)
+                <div class="flex items-center gap-2 text-xs text-cyan-100/70">
+                    <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-400"></i>
+                    <span>{{ $feature }}</span>
+                </div>
+                @endforeach
+            </div>
+        </x-ui.card>
+        @endforeach
+    </div>
+</section>
+
 <!-- CTA Section -->
 <section class="relative px-6 py-24 max-w-4xl mx-auto text-center">
     <div class="glass-strong p-12 rounded-3xl">
@@ -231,37 +347,82 @@
         </p>
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
             <x-ripple-button size="lg" onclick="window.location.href='{{ route('auth.login') }}'" class="flex items-center gap-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                </svg>
-                Espace Citoyen
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                </svg>
+                <i data-lucide="user-plus" class="w-5 h-5"></i>
+                Créer un compte
+                <i data-lucide="arrow-right" class="w-4 h-4"></i>
             </x-ripple-button>
             <x-ripple-button size="lg" variant="secondary" onclick="window.location.href='{{ route('auth.login') }}'" class="flex items-center gap-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
-                </svg>
-                Espace Gestionnaire
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                </svg>
+                <i data-lucide="log-in" class="w-5 h-5"></i>
+                Se connecter
             </x-ripple-button>
         </div>
     </div>
 </section>
 
 <!-- Footer -->
-<footer class="relative px-6 py-12 border-t border-white/5">
-    <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-        <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/30">
-                <i data-lucide="droplet" class="w-6 h-6 text-white"></i>
+<footer class="relative px-6 py-16 border-t border-white/5">
+    <div class="max-w-6xl mx-auto">
+        <div class="grid md:grid-cols-4 gap-8 mb-12">
+            <!-- Brand -->
+            <div class="md:col-span-1">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/30">
+                        <i data-lucide="droplet" class="w-6 h-6 text-white"></i>
+                    </div>
+                    <span class="font-display text-xl font-bold text-white">AquaSecure</span>
+                </div>
+                <p class="text-sm text-cyan-100/50 leading-relaxed">
+                    Surveillance intelligente des infrastructures d'eau potable pour un avenir durable.
+                </p>
             </div>
-            <span class="font-display text-xl font-bold text-white">AquaSecure</span>
+            
+            <!-- Platform -->
+            <div>
+                <h4 class="text-sm font-display font-bold text-white mb-4">Plateforme</h4>
+                <ul class="space-y-2">
+                    <li><a href="{{ route('landing') }}" class="text-sm text-cyan-100/60 hover:text-cyan-400 transition-colors">Accueil</a></li>
+                    <li><a href="{{ route('auth.login') }}" class="text-sm text-cyan-100/60 hover:text-cyan-400 transition-colors">Se connecter</a></li>
+                    <li><a href="{{ route('auth.register') }}" class="text-sm text-cyan-100/60 hover:text-cyan-400 transition-colors">Créer un compte</a></li>
+                    <li><a href="#" class="text-sm text-cyan-100/60 hover:text-cyan-400 transition-colors">Fonctionnalités</a></li>
+                </ul>
+            </div>
+            
+            <!-- Resources -->
+            <div>
+                <h4 class="text-sm font-display font-bold text-white mb-4">Ressources</h4>
+                <ul class="space-y-2">
+                    <li><a href="#" class="text-sm text-cyan-100/60 hover:text-cyan-400 transition-colors">Documentation</a></li>
+                    <li><a href="#" class="text-sm text-cyan-100/60 hover:text-cyan-400 transition-colors">Guide utilisateur</a></li>
+                    <li><a href="#" class="text-sm text-cyan-100/60 hover:text-cyan-400 transition-colors">FAQ</a></li>
+                    <li><a href="#" class="text-sm text-cyan-100/60 hover:text-cyan-400 transition-colors">Support</a></li>
+                </ul>
+            </div>
+            
+            <!-- Legal -->
+            <div>
+                <h4 class="text-sm font-display font-bold text-white mb-4">Légal</h4>
+                <ul class="space-y-2">
+                    <li><a href="#" class="text-sm text-cyan-100/60 hover:text-cyan-400 transition-colors">Mentions légales</a></li>
+                    <li><a href="#" class="text-sm text-cyan-100/60 hover:text-cyan-400 transition-colors">Confidentialité</a></li>
+                    <li><a href="#" class="text-sm text-cyan-100/60 hover:text-cyan-400 transition-colors">CGU</a></li>
+                    <li><a href="#" class="text-sm text-cyan-100/60 hover:text-cyan-400 transition-colors">Cookies</a></li>
+                </ul>
+            </div>
         </div>
-        <p class="text-sm text-cyan-200/40">Surveillance intelligente des infrastructures d'eau potable · Grand Tunis</p>
+        
+        <!-- Bottom -->
+        <div class="pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
+            <p class="text-sm text-cyan-100/40">
+                © {{ date('Y') }} AquaSecure. Tous droits réservés.
+            </p>
+            <div class="flex items-center gap-4">
+                <span class="text-xs text-cyan-100/40">Grand Tunis, Tunisie</span>
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span class="text-xs text-cyan-100/40">Système opérationnel</span>
+                </div>
+            </div>
+        </div>
     </div>
 </footer>
 

@@ -33,6 +33,9 @@
     <main class="relative z-10 min-h-screen flex items-center justify-center px-4 py-28">
         @yield('auth-content')
     </main>
+    
+    <!-- Toast Notifications -->
+    <x-ui.toast />
 </div>
 
 @push('scripts')
